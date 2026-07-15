@@ -22,6 +22,8 @@ machines is manual, on purpose, matching what you asked for.
 import json
 import os
 
+import crypto_primitives as _cp
+
 # ---- Phase 1 parameters (Params, per the paper's Eq. system_params) ----
 DELTA_T_SECONDS = 1          # Remote ID pseudonym interval
 N_INTERVALS = 16              # n: intervals per Merkle root (small for local testing)
@@ -31,14 +33,23 @@ SECURITY_PARAMETER_BITS = 128  # lambda
 ML_DSA_ALG = "ML-DSA-65"
 ML_KEM_ALG = "ML-KEM-768"
 
-# ---- Domain-separation tags (must match Table: domain-separation labels) ----
+# ---- Domain-separation tags (Table 5: domain-separation labels used in
+# KDF and hash calls). TAG_LIGHTWEIGHT is deliberately absent: it isn't
+# in Table 5 at all, it was a leftover from an earlier draft's
+# lightweight/strong mode split, which the paper's final Algorithm 5+6
+# doesn't have (Phase 4 always runs the full sequence; see Section
+# III.H: "The protocol has no lower-assurance branch").
 TAG_ML_DSA = b"ML-DSA"
 TAG_MERKLE_ROOT = b"MerkleRoot"
 TAG_INTERVAL_SECRET = b"IntervalSecret"
 TAG_RID = b"RID"
 TAG_LEAF = b"leaf"
+TAG_NODE = b"node"
 TAG_RID_AUTH = b"RID-Auth"
-TAG_LIGHTWEIGHT = b"Lightweight"
+TAG_AUTH_TRANSCRIPT = b"RID-UAV-Auth-v1"
+TAG_STATE = b"state"
+TAG_REQID = b"ReqID"
+TAG_AEAD_NONCE = b"AEAD-Nonce"
 
 # ---- File-based "channel" helpers ----
 
@@ -107,3 +118,21 @@ def read_message(filepath: str) -> dict:
         encoded = json.load(f)
 
     return {key: _decode_value(value) for key, value in encoded.items()}
+
+
+# ---- Eq. (10)-(11): ReqID and the deterministic AEAD nonce ----
+#
+# Defined once here, rather than re-derived independently in each phase
+# script, precisely because (per this file's own docstring) any
+# byte-level divergence between the UAV and verifier sides silently
+# breaks verification. Both sides must call these on the identical
+# canonical bytes (canonical_json_bytes(req_auth) for req_auth_bytes).
+
+def compute_req_id(req_auth_bytes: bytes) -> bytes:
+    """ReqID = Trunc128(H256("ReqID" || ReqAuthWire)), Eq. (10)."""
+    return _cp.hash_bytes(TAG_REQID + req_auth_bytes)[:16]
+
+
+def compute_aead_nonce(req_id: bytes, ct: bytes) -> bytes:
+    """N_A = Trunc128(H256("AEAD-Nonce" || ReqID || ct)), Eq. (11)."""
+    return _cp.hash_bytes(TAG_AEAD_NONCE + req_id + ct)[:16]
