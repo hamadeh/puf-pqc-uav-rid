@@ -1,0 +1,51 @@
+NIST SP 800-90B reference entropy-assessment tool
+==================================================
+
+Source: https://github.com/usnistgov/SP800-90B_EntropyAssessment
+Commit: 87c104d0ed4cbc96103e7b8b38d6f2c7e0a6b289 (2026-05-26)
+
+These binaries (ea_iid, ea_non_iid, ea_restart, ea_conditioning) are an
+unmodified build of NIST's own reference implementation, compiled here
+for macOS x86_64 (Apple clang 14.0.0, Darwin 21.6.0). They implement
+the full IID permutation-test battery and the full 10-estimator
+non-IID track exactly as published, not a hand-rolled subset.
+
+Validated: ./selftest/selftest against selftest/refdata/ passed for
+all 11 sample datasets, every reported delta well under the README's
+1.0E-6 pass threshold (largest observed delta: ~1.0E-13).
+
+Build command used (macOS, Homebrew deps: jsoncpp gmp mpfr
+libdivsufsort openssl@3 libomp):
+
+    make CXX=clang++ \
+      CXXFLAGS="-std=c++11 -Xpreprocessor -fopenmp -O2 -ffloat-store \
+        -I$(brew --prefix jsoncpp)/include -I$(brew --prefix gmp)/include \
+        -I$(brew --prefix mpfr)/include -I$(brew --prefix libdivsufsort)/include \
+        -I$(brew --prefix openssl@3)/include -I$(brew --prefix libomp)/include" \
+      LIB="-L$(brew --prefix libdivsufsort)/lib -ldivsufsort -ldivsufsort64 \
+        -lbz2 -lpthread -L$(brew --prefix libomp)/lib -lomp" \
+      COND_LIB="-L$(brew --prefix mpfr)/lib -L$(brew --prefix gmp)/lib -lmpfr -lgmp" \
+      SHARED_LIB="-L$(brew --prefix jsoncpp)/lib -ljsoncpp \
+        -L$(brew --prefix openssl@3)/lib -lcrypto" \
+      iid non_iid restart conditioning
+
+USAGE (see the upstream README for full flag documentation):
+
+    ./ea_non_iid [-i|-c] [-a|-t] [-v] <file> [bits_per_symbol]
+    ./ea_iid     [-i|-c] [-a|-t] [-v] [-l <index>,<samples>] <file> [bits_per_symbol]
+
+Input format: SP 800-90B Section 3.1.4.1 "row dataset" -- one byte per
+sample, symbol packed into the low bits_per_symbol bits. For this
+project's RO-PUF response data, bits_per_symbol=1 (one comparator bit
+per challenge) and the input file is a flat sequence of 0x00/0x01
+bytes, one per challenge, per PVT condition per Monte Carlo instance
+(run separately per PVT condition, per Section III-E / Table 14's
+"reported separately for each PVT condition" requirement -- do not
+concatenate across conditions before running these tools).
+
+If you need to rebuild on Linux (e.g. cross-compiling for the
+Raspberry Pi, or building natively on the Mac's Linux-based CI), the
+upstream README's Ubuntu package list applies directly:
+    apt-get install libbz2-dev libdivsufsort-dev libjsoncpp-dev libssl-dev libmpfr-dev
+and `make` with no special flags needed (the CXXFLAGS/LIB overrides
+above exist only to point at Homebrew's non-standard macOS paths).

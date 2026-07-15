@@ -1,0 +1,106 @@
+"""
+crypto_primitives.py
+
+H(.), KDF(.), and AEAD for the protocol, now backed by the OFFICIAL Ascon
+reference C implementation (ascon-c, github.com/ascon/ascon-c) via
+ctypes, replacing the pure-Python `ascon` PyPI package used in earlier
+versions of this file.
+
+WHY THIS CHANGED: the pure-Python package measured ~0.53ms per hash call,
+about 380x slower than a C-backed hash (confirmed by direct comparison
+against hashlib.sha3_256 at ~0.0014ms per call). At your real parameter
+scale (n=1024 or n=16384), that made Merkle-root generation alone take
+multiple seconds to potentially close to a minute, a Python-overhead
+artifact, not a property of the algorithm. Switching to this C backend
+measured 183x faster for the same n=64 Merkle-root generation (217ms ->
+1.18ms), and at n=1024 the whole operation now takes about 11ms.
+
+This ALSO fixes the standards-compliance caveat from earlier: this is
+Ascon-Hash256 and Ascon-AEAD128 exactly, NIST SP 800-232, not the
+pre-standardization v1.2 naming the PyPI package used. One fix, two
+problems solved.
+
+SETUP: run build_ascon_libs.sh once, on EACH machine (computer and Pi),
+it needs to produce a native binary for that machine's architecture, a
+library built on your x86_64 computer will not load on the Pi's ARM64,
+and vice versa. That produces libasconhash.so and libasconaead.so next
+to this file, which this module loads via ctypes.
+"""
+
+import ctypes
+import os
+
+_DIR = os.path.dirname(__file__)
+_HASH_LIB_PATH = os.path.join(_DIR, "libasconhash.so")
+_AEAD_LIB_PATH = os.path.join(_DIR, "libasconaead.so")
+
+for _path in (_HASH_LIB_PATH, _AEAD_LIB_PATH):
+    if not os.path.exists(_path):
+        raise ImportError(
+            f"{_path} not found. Run ./build_ascon_libs.sh once on THIS "
+            f"machine first (a .so built on a different machine/architecture "
+            f"will not load, e.g. a library built on your x86_64 computer "
+            f"will not work on the Pi's ARM64, and this must be built "
+            f"separately on each)."
+        )
+
+_libhash = ctypes.CDLL(_HASH_LIB_PATH)
+_libaead = ctypes.CDLL(_AEAD_LIB_PATH)
+
+_HASH_LEN = 32  # bytes, Ascon-Hash256's fixed output size
+
+
+def hash_bytes(data: bytes) -> bytes:
+    """H(data), Ascon-Hash256 (NIST SP 800-232), via the C reference implementation."""
+    out = ctypes.create_string_buffer(_HASH_LEN)
+    ret = _libhash.crypto_hash(out, data, ctypes.c_ulonglong(len(data)))
+    if ret != 0:
+        raise RuntimeError("ascon-c crypto_hash returned nonzero")
+    return out.raw
+
+
+def kdf(*parts: bytes) -> bytes:
+    """
+    KDF(part_1 || part_2 || ...), domain-separated by concatenation order,
+    matching the protocol's KDF(S1 || "ML-DSA" || ctx_i)-style calls.
+    """
+    return hash_bytes(b"".join(parts))
+
+
+def aead_encrypt(key16: bytes, nonce16: bytes, associated_data: bytes,
+                  plaintext: bytes) -> bytes:
+    """
+    AEAD.Enc_key(plaintext), Ascon-AEAD128 (NIST SP 800-232). key16 and
+    nonce16 must each be exactly 16 bytes. Returns ciphertext with the
+    16-byte authentication tag appended.
+    """
+    clen = ctypes.c_ulonglong(0)
+    c = ctypes.create_string_buffer(len(plaintext) + 16)
+    ret = _libaead.crypto_aead_encrypt(
+        c, ctypes.byref(clen),
+        plaintext, ctypes.c_ulonglong(len(plaintext)),
+        associated_data, ctypes.c_ulonglong(len(associated_data)),
+        None, nonce16, key16
+    )
+    if ret != 0:
+        raise RuntimeError("ascon-c crypto_aead_encrypt returned nonzero")
+    return c.raw[:clen.value]
+
+
+def aead_decrypt(key16: bytes, nonce16: bytes, associated_data: bytes,
+                  ciphertext: bytes):
+    """
+    AEAD.Dec_key(ciphertext) -> plaintext, or None if authentication fails.
+    key16 and nonce16 must each be exactly 16 bytes.
+    """
+    mlen = ctypes.c_ulonglong(0)
+    m = ctypes.create_string_buffer(max(len(ciphertext), 1))
+    ret = _libaead.crypto_aead_decrypt(
+        m, ctypes.byref(mlen), None,
+        ciphertext, ctypes.c_ulonglong(len(ciphertext)),
+        associated_data, ctypes.c_ulonglong(len(associated_data)),
+        nonce16, key16
+    )
+    if ret != 0:
+        return None
+    return m.raw[:mlen.value]

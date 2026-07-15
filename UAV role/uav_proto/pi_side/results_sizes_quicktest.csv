@@ -1,0 +1,8 @@
+object,n,size_bytes
+ML-DSA-65 public key (PK_i / PK_TA / PK_Vj),16,1952
+ML-DSA-65 secret key (SK_i),16,4032
+"ML-DSA-65 signature (AuthRec, Cert_Vj, sigma_D)",16,3309
+ML-KEM-768 public key (ek_Vj),16,1184
+ML-KEM-768 ciphertext (ct),16,1088
+Fuzzy extractor helper data (HD1 or HD2),16,13
+"Store_D_i^NV, one root record, n=16",16,6973

@@ -1,0 +1,58 @@
+* Single 7-Stage Ring Oscillator (Base Cell for RO-PUF)
+.options post=2
+
+* Load the 45nm process model (choose HP or LP)
+.lib 'ptm45hp.lib' TT
+
+* Power supply for 45nm HP typical voltage
+Vdd vdd 0 DC 1.1V
+
+* ---- 7-Stage Inverter Ring with Start-up Switch ----
+* Start-up switch: NMOS pass transistor. Initially OFF, closes at 5ns to form the loop.
+* Format: Name Drain Gate Source Bulk Model W= L=
+Mstart net1 start 0 0 NMOS W=1u L=45n
+
+* Stage 1
+M1 net2 in1 0 0 NMOS W=1u L=45n
+M1p net2 in1 vdd vdd PMOS W=2u L=45n
+
+* Stage 2
+M2 net3 net2 0 0 NMOS W=1u L=45n
+M2p net3 net2 vdd vdd PMOS W=2u L=45n
+
+* Stage 3
+M3 net4 net3 0 0 NMOS W=1u L=45n
+M3p net4 net3 vdd vdd PMOS W=2u L=45n
+
+* Stage 4
+M4 net5 net4 0 0 NMOS W=1u L=45n
+M4p net5 net4 vdd vdd PMOS W=2u L=45n
+
+* Stage 5
+M5 net6 net5 0 0 NMOS W=1u L=45n
+M5p net6 net5 vdd vdd PMOS W=2u L=45n
+
+* Stage 6
+M6 net7 net6 0 0 NMOS W=1u L=45n
+M6p net7 net6 vdd vdd PMOS W=2u L=45n
+
+* Stage 7 (Output stage)
+M7 out net7 0 0 NMOS W=1u L=45n
+M7p out net7 vdd vdd PMOS W=2u L=45n
+
+* Feedback connection from output of Stage 7 to input of Stage 1 via start switch
+* Pulse source to control the start switch
+Vstart start 0 PULSE(0 1.1 0 1n 1n 5n 20n)  * Switch closes at 5ns
+Rfb out in1 1k   * Weak feedback resistor to initialize DC bias
+
+* ---- Simulation Control ----
+* Transient analysis for 20ns with 0.01ns step
+.tran 0.01n 20n
+
+* ---- Frequency Measurement ----
+* Measure oscillation period and frequency
+.Measure Tran T1 Trig V(out) VAL=0.55V Rise=2 
++                    Targ V(out) VAL=0.55V Rise=3
+.Measure Freq Param='1/T1'
+
+.end

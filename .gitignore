@@ -1,0 +1,24 @@
+# Vendored third-party dependencies (nested repos / large build trees)
+**/liboqs/
+**/liboqs-python/
+**/ascon-c/
+**/ascon_c_src/
+**/venv/
+**/build/
+
+# Python
+__pycache__/
+*.pyc
+
+# Compiled artifacts (machine-specific, rebuilt locally per README)
+*.so
+
+# Secrets -- never commit these, matching this codebase's own
+# *_DO_NOT_SHARE.json naming convention
+*_DO_NOT_SHARE.json
+
+# OS cruft
+.DS_Store
+
+# Claude Code local tool config, not project state
+.claude/settings.local.json

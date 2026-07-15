@@ -1,0 +1,10 @@
+operation,n,mean_ms,std_ms,min_ms,max_ms,trials
+"PUF evaluation (EMULATED, not real hardware)",16,0.4274,0.173,0.2243,0.647,3
+Fuzzy extractor generation (FE.Gen),16,5.2738,2.4611,2.7508,8.6117,3
+Fuzzy extractor reconstruction (FE.Rec),16,2.7876,0.12,2.6836,2.9557,3
+"One Merkle-root generation, n=16",16,0.6702,0.0688,0.6212,0.7674,3
+"Pre-flight root activation, n=16",16,4.0729,0.0504,4.0099,4.1332,3
+Routine broadcast identifier selection,16,0.0396,0.0357,0.0113,0.0899,3
+Verifier auth + session establishment (UAV side),16,0.5287,0.1641,0.3837,0.7581,3
+Lightweight authentication (UAV side compute),16,3.9091,0.0738,3.8262,4.0054,3
+"Strong authentication (UAV side compute, incl. key regen)",16,16.3738,0.57,15.9683,17.1799,3
