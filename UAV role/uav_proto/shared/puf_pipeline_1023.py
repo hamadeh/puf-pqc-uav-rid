@@ -2,14 +2,17 @@
 puf_pipeline_1023.py
 
 The paper-scale (1023-bit, BCH(1023,943,17)-class) majority-vote / BCH /
-Toeplitz pipeline used specifically for Table 17's "Majority voting, BCH
-reconstruction, and 256-bit extraction" row.
+Toeplitz pipeline: MajorityPUF -> FE.Gen/FE.Rec -> Ext_rho, Eq. (3)-(5).
 
-This is deliberately separate from shared/fuzzy_extractor.py, which is
-NOT touched by this work (existing file; its own BCH parameters, t=8
-m=13, target a 64-byte/512-bit raw response and remain what Phase
-2/3/4 actually use in the live protocol). This module exists only to
-give Task A an honest, paper-parameter-matched pipeline to benchmark.
+Originally built standalone for Table 17's benchmark row; now also the
+implementation fuzzy_extractor.py delegates to for the live protocol
+(Phase 2/3/4), so this module is production infrastructure, not
+benchmark-only. Moved here from pi_side/ for that reason. It has no
+opinion on WHERE its raw_reads argument comes from: benchmark_table17.py
+feeds it synthetic same-shaped data (see that script's docstring for why
+that is safe for a pure timing benchmark and would not be for an entropy
+claim); fuzzy_extractor.py feeds it puf_emulated.acquire_response_reads()
+output for the live protocol.
 
 BCH CAPACITY CAVEAT, read before trusting exact bit counts: bchlib's
 Python API is a systematic message+ecc codec (encode(message) -> ecc),
@@ -28,16 +31,28 @@ decode cost is governed by n and t, not by a 7-bit difference in k);
 it would matter for a correctness/entropy claim, which is Task C's
 job with real HSpice data, not this module's.
 
-The Toeplitz extraction step nonetheless runs over the FULL 1023-bit
-response vector, exactly matching Eq. (4)/(5) and Table 11/14's stated
-"seeded 2-universal Toeplitz extractor with 256-bit output and
-1278-bit public extractor seed."
+TAIL-ZEROING, a correctness fix (not present in the first version of
+this module): the 87 bits beyond the BCH-protected message are never
+error-corrected, so they must never be allowed to vary between
+enrollment and reconstruction, or Ext_rho's output would silently stop
+being deterministic under any noise landing in that region -- exactly
+the noisy-reconstruction case a fuzzy extractor exists to handle.
+Passing the tail through as-read (what an earlier version of this
+module did) breaks that guarantee: it happened not to be caught by
+Task A's own tests only because those tests confined injected errors
+to the protected region on purpose. Both fe_gen_1023 and fe_rec_1023
+therefore zero the unprotected tail before Toeplitz extraction rather
+than forwarding either party's raw read of it, so the Toeplitz input
+is always the fixed value {corrected 936-bit message, 87 zero bits,
+zero pad bit} -- deterministic regardless of tail noise, at the cost
+of those 87 bits never contributing extractable entropy. That is a
+deliberate, disclosed trade against Table 11/14's literal "full
+1023-bit response vector" framing, forced by bchlib's byte-oriented
+capacity shortfall documented above; Task C's real entropy
+characterization must account for only ~936 bits actually being
+usable this way if it ever needs to reconcile against this module's
+behavior.
 """
-
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
 
 import bchlib
 
@@ -55,20 +70,27 @@ def _make_bch() -> "bchlib.BCH":
     return bchlib.BCH(t=_T, m=_M)
 
 
+def _zero_tail(message: bytes) -> bytes:
+    """message (BCH_MESSAGE_BYTES) + a fixed zero tail, padded to RESPONSE_BYTES."""
+    return message + b"\x00" * (RESPONSE_BYTES - BCH_MESSAGE_BYTES)
+
+
 def fe_gen_1023(raw_reads: list[list[int]]) -> tuple[bytes, bytes, bytes]:
     """
     Enrollment-time path: majority vote -> BCH encode -> Toeplitz extract.
 
     Returns (K_PUF, bch_ecc, toeplitz_seed). bch_ecc and toeplitz_seed
     together are the public helper data HD = (s, rho) of Eq. (4);
-    K_PUF is the 256-bit extracted secret, never stored.
+    K_PUF is the 256-bit extracted secret, never stored. See the module
+    docstring's TAIL-ZEROING note for why Toeplitz extraction runs over
+    {message, zero tail}, not the raw majority-voted tail.
     """
     R = majority_vote.majority_vote(raw_reads)
     bch = _make_bch()
     message = bytearray(R[:BCH_MESSAGE_BYTES])
     ecc = bch.encode(bytes(message))
     seed = toeplitz_extractor.generate_seed()
-    k_puf = toeplitz_extractor.extract(R, seed)
+    k_puf = toeplitz_extractor.extract(_zero_tail(bytes(message)), seed)
     return k_puf, ecc, seed
 
 
@@ -89,5 +111,4 @@ def fe_rec_1023(raw_reads_noisy: list[list[int]], bch_ecc: bytes,
         return None
     bch.correct(message, ecc)
 
-    r_corrected = bytes(message) + r_prime[BCH_MESSAGE_BYTES:]
-    return toeplitz_extractor.extract(r_corrected, toeplitz_seed)
+    return toeplitz_extractor.extract(_zero_tail(bytes(message)), toeplitz_seed)

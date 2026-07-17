@@ -1,95 +1,84 @@
 """
 fuzzy_extractor.py
 
-FE.Gen / FE.Rec, following the standard fuzzy-extractor pattern of Dodis,
-Ostrovsky, Reyzin, and Smith, "Fuzzy Extractors: How to Generate Strong
-Keys from Biometrics and Other Noisy Data," SIAM J. Computing 38(1), 2008
-(the construction your own paper's reference [28] points to).
+FE.Gen / FE.Rec, Eq. (4)-(5): ChallengeSchedule -> MajorityPUF(9 reads)
+-> BCH(1023,943,17) secure sketch -> seeded 256-bit Toeplitz extraction.
+Delegates to puf_pipeline_1023.py (the majority-vote/BCH/Toeplitz
+pipeline originally built for the Table 17 benchmark, now shared
+production infrastructure), majority_vote.py, and
+toeplitz_extractor.py, rather than reimplementing that pipeline here.
 
-This is the syndrome-based variant: helper data is the BCH parity/syndrome
-of the raw PUF response, computed once at enrollment and stored reliably.
-A later noisy re-read is corrected against that stored syndrome using
-bchlib (github.com/jkent/python-bchlib), which wraps a BCH encoder/decoder.
-The corrected, exact response is then hashed to produce a uniform secret,
-the entropy-extraction step every fuzzy extractor construction requires on
-top of error correction alone.
+WHAT CHANGED FROM THE EARLIER VERSION: that version worked over a
+64-byte raw response from a single puf_emulated.puf_response() call,
+using BCH t=8/m=13 (a 8191-bit codeword sized for a 512-bit input) and
+extracting the secret via a plain hash rather than a Toeplitz
+extractor -- none of which matches the paper's actual construction (a
+1023-bit majority-voted RO-PUF response, BCH(1023,943,17), and the
+seeded 2-universal Toeplitz extractor of Eq. 4-5). This version fixes
+that by using the real pipeline for both PUF channels (this codebase
+keeps the dual-challenge design: one independent challenge schedule and
+FE.Gen/FE.Rec call for S1's channel, another for S2's -- see
+uav_phase2_enroll_request.py -- rather than the paper's single-K_PUF +
+SHAKE256 split; both channels individually now run the paper-exact
+per-challenge pipeline).
 
-bchlib is a C extension. On the Raspberry Pi 5 (aarch64), `pip install
-bchlib` will need to build from source unless a manylinux_aarch64 wheel is
-available for your Python version, check this before relying on it; if no
-wheel is available you will need build-essential and python3-dev installed
-first, and a source build will happen automatically via pip.
+HELPER DATA FORMAT: HD = bch_ecc (10 bytes) || toeplitz_seed (160
+bytes) = 170 bytes total, packed as one blob for API compatibility
+with callers that store a single HD value (Store_NV). This matches the
+paper's own stated total exactly: Table 16 states "170 bytes of helper
+data."
 """
 
-import bchlib
+import challenge_schedule
+import puf_emulated
+import puf_pipeline_1023 as _pipeline
 
-from crypto_primitives import hash_bytes
-
-# BCH parameters: t = number of bit errors correctable, m = Galois field
-# order (codeword length is 2**m - 1 bits). Providing m lets bchlib select
-# a valid primitive polynomial automatically rather than hand-picking one.
-#
-# SIZING WARNING, verified empirically, not a guess: t must be sized well
-# above the *expected* number of bit errors, not just above it. With a
-# 64-byte (512-bit) response and t=8, testing at bit_error_rate=0.02
-# (expected ~10.2 errors) fails most of the time, since 10.2 > 8. Even at
-# bit_error_rate=0.01 (expected ~5.1 errors, comfortably under t=8), 30
-# trials only succeeded 25/30 (83%), because binomial variance regularly
-# pushes the actual error count above the mean and past t. If you adopt a
-# bit-error-rate figure from the RO-PUF literature for your own noise
-# model, size t against the tail of the binomial distribution at that
-# rate and response length, not the mean, or your fuzzy extractor will
-# have a nontrivial, silent failure rate under exactly the conditions it
-# exists to handle.
-_T = 8
-_M = 13
+_ECC_BYTES = 10  # bchlib(t=8, m=10)'s ecc_bytes; see puf_pipeline_1023.py
 
 
-def _make_bch() -> bchlib.BCH:
-    return bchlib.BCH(t=_T, m=_M)
-
-
-def data_capacity_bytes() -> int:
-    """Maximum raw-response size (bytes) this BCH configuration can protect."""
-    bch = _make_bch()
-    return (bch.n // 8) - bch.ecc_bytes
-
-
-def fe_gen(raw_response: bytes) -> tuple[bytes, bytes]:
+def fe_gen(raw_reads: list) -> tuple:
     """
-    FE.Gen(R) -> (secret, helper_data)
+    FE.Gen(R) -> (secret, helper_data), Eq. (4).
 
-    raw_response: the (noiseless, enrollment-time) PUF response, must fit
-    within data_capacity_bytes().
+    raw_reads: NUM_CHALLENGES x READS_PER_CHALLENGE noisy comparator
+    reads (majority_vote.majority_vote()'s input shape), typically from
+    puf_emulated.acquire_response_reads(). See gen_from_seed() below for
+    a higher-level entry point that also handles challenge-schedule
+    generation and PUF acquisition.
     """
-    bch = _make_bch()
-    cap = data_capacity_bytes()
-    if len(raw_response) > cap:
-        raise ValueError(
-            f"raw_response is {len(raw_response)} bytes, exceeds this BCH "
-            f"configuration's capacity of {cap} bytes; shrink the PUF "
-            f"response length or increase m/t."
-        )
-    # pad to fixed capacity so encode() sees a consistent length
-    padded = raw_response.ljust(cap, b"\x00")
-    helper_data = bytes(bch.encode(padded))
-    secret = hash_bytes(padded)
-    return secret, helper_data
+    k_puf, ecc, toeplitz_seed = _pipeline.fe_gen_1023(raw_reads)
+    helper_data = ecc + toeplitz_seed
+    return k_puf, helper_data
 
 
-def fe_rec(raw_response_noisy: bytes, helper_data: bytes) -> bytes | None:
+def fe_rec(raw_reads_noisy: list, helper_data: bytes):
     """
     FE.Rec(R', helper_data) -> secret, or None if correction fails
-    (too many bit errors for this BCH configuration to fix).
+    (more than t=8 bit errors in the BCH-protected message), Eq. (5).
     """
-    bch = _make_bch()
-    cap = data_capacity_bytes()
-    padded_noisy = bytearray(raw_response_noisy.ljust(cap, b"\x00"))
-    ecc = bytearray(helper_data)
+    ecc = helper_data[:_ECC_BYTES]
+    toeplitz_seed = helper_data[_ECC_BYTES:]
+    return _pipeline.fe_rec_1023(raw_reads_noisy, ecc, toeplitz_seed)
 
-    nerr = bch.decode(bytes(padded_noisy), bytes(ecc))
-    if nerr < 0:
-        return None  # uncorrectable: more errors than t
 
-    bch.correct(padded_noisy, ecc)
-    return hash_bytes(bytes(padded_noisy))
+def gen_from_seed(c_seed: bytes) -> tuple:
+    """
+    Convenience wrapper for enrollment: ChallengeSchedule(c_seed) ->
+    acquire 9 reads/challenge -> FE.Gen. Returns (secret, helper_data).
+    """
+    challenges = challenge_schedule.challenge_schedule(c_seed)
+    reads = puf_emulated.acquire_response_reads(challenges)
+    return fe_gen(reads)
+
+
+def rec_from_seed(c_seed: bytes, helper_data: bytes):
+    """
+    Convenience wrapper for reconstruction (Phase 3 activation, Phase 4
+    authentication): regenerates the SAME challenge schedule from
+    c_seed (must be the identical seed used at enrollment), acquires a
+    fresh set of 9 noisy reads per challenge, and runs FE.Rec. Returns
+    the secret, or None if correction fails.
+    """
+    challenges = challenge_schedule.challenge_schedule(c_seed)
+    reads = puf_emulated.acquire_response_reads(challenges)
+    return fe_rec(reads, helper_data)
