@@ -16,10 +16,27 @@ Produces: out/uav_root_requests.json, containing one RootReq_i^(k) per
 root window. Copy this file to the computer's computer_side/in/ directory
 next, then run ta_phase2_enroll_process.py there.
 
-ML-DSA keygen is now genuinely seeded/deterministic (see seeded_ml_dsa.py),
-closing the gap flagged in earlier versions of this script: the same
+ALIGNED WITH ALGORITHM 1: response acquisition now runs the paper's
+actual pipeline (ChallengeSchedule -> MajorityPUF(9 reads) -> FE.Gen
+over BCH(1023,943,17) -> seeded 256-bit Toeplitz extraction, via
+fuzzy_extractor.gen_from_seed()) instead of a single noiseless
+puf_response() call. This codebase keeps its established dual-channel
+design (one independent seed/FE.Gen for S1, another for S2) rather than
+the paper's single-K_PUF + SHAKE256 split -- CSeed1 and CSeed2 replace
+the previous raw challenge tokens C1/C2 (the schedule, not one
+challenge, is what needs to be reproducible from the seed at
+reconstruction time). PID_kj now includes FlightCtx_k in its hash input
+(Algorithm 1 line 17: PID_kj = Trunc128(H256("RID" || X_kj || j ||
+RootNonce_k || FlightCtx_k)); this was previously omitted). Leaves use
+merkle.leaf_hash() (H384/TupleHash, Eq. 13) instead of the old
+H256-based construction. RootReq_i^(k) no longer carries HD1/HD2/
+CSeed1/CSeed2 -- Eq. (21) doesn't include them (the TA never reads
+them; verified against ta_phase2_enroll_process.py, which only reads
+k/pk_i/mr_k/root_nonce/flight_ctx from the request).
+
+ML-DSA keygen is seeded/deterministic (see seeded_ml_dsa.py): the same
 seed_i^sig will regenerate the identical (PK_i, SK_i) later, which is
-what Phase 4's strong-mode key-confirmation check depends on.
+what Algorithm 6's key-confirmation check depends on.
 """
 
 import sys
@@ -32,7 +49,6 @@ sys.path.insert(0, os.path.dirname(__file__))
 import protocol_common as pc
 import crypto_primitives as cp
 import merkle
-import puf_emulated
 import fuzzy_extractor
 import seeded_ml_dsa
 
@@ -42,6 +58,7 @@ IN_DIR = os.path.join(os.path.dirname(__file__), "in")
 OUT_DIR = os.path.join(os.path.dirname(__file__), "out")
 
 UAV_CTX = b"uav-001"  # ctx_i: identifies this UAV in the KDF domain separation
+SEED_BYTES = 32
 
 
 def main():
@@ -60,21 +77,19 @@ def main():
     print(f"Phase 2: UAV Enrollment (Algorithm 1), UAV side")
     print(f"Using TA params: n={n} intervals, m={m} roots, alg={ml_dsa_alg}")
 
+    import puf_emulated
     puf_emulated.reset_store()  # fresh "device" for this run
 
-    # --- Extract hardware secrets (lines 2-3) ---
-    C1 = secrets.token_bytes(16)
-    C2 = secrets.token_bytes(16)
-    R1 = puf_emulated.puf_response(C1, 64)
-    R2 = puf_emulated.puf_response(C2, 64)
-
-    S1, HD1 = fuzzy_extractor.fe_gen(R1)
-    S2, HD2 = fuzzy_extractor.fe_gen(R2)
-    print("PUF secrets extracted, fuzzy extractor helper data generated.")
+    # --- Extract hardware secrets (Algorithm 1 lines 1-3, run twice: one
+    # channel for S1, one for S2, per this codebase's dual-challenge design) ---
+    c_seed1 = secrets.token_bytes(SEED_BYTES)
+    c_seed2 = secrets.token_bytes(SEED_BYTES)
+    S1, HD1 = fuzzy_extractor.gen_from_seed(c_seed1)
+    S2, HD2 = fuzzy_extractor.gen_from_seed(c_seed2)
+    print("PUF secrets extracted (ChallengeSchedule -> MajorityPUF -> "
+          "FE.Gen[BCH(1023,943,17)] -> Toeplitz-256), helper data generated.")
 
     # --- Derive signing identity (lines 4-7) ---
-    # Now genuinely seeded/deterministic (see seeded_ml_dsa.py); this closes
-    # the gap flagged since the first Phase 2 delivery.
     seed_sig = cp.kdf(S1, pc.TAG_ML_DSA, UAV_CTX)
     PK_i, SK_i = seeded_ml_dsa.seeded_keygen(ml_dsa_alg, seed_sig)
     KC_i = cp.hash_bytes(PK_i)
@@ -94,26 +109,30 @@ def main():
                          "max_intervals": n, "region": "TEST-REGION"},
             "scope": "test-deployment",
         }
+        flight_ctx_bytes = pc.canonical_json_bytes(flight_ctx)
         seed_k = cp.kdf(S2, root_nonce, k.to_bytes(4, "big"), pc.TAG_MERKLE_ROOT)
 
         leaves = []
         for j in range(n):
             j_bytes = j.to_bytes(4, "big")
             x_kj = cp.kdf(seed_k, j_bytes, pc.TAG_INTERVAL_SECRET)
-            pid_kj = cp.hash_bytes(pc.TAG_RID + x_kj + j_bytes + root_nonce)[:16]
-            leaf = cp.hash_bytes(pc.TAG_LEAF + pid_kj + j_bytes + root_nonce)
+            pid_kj = cp.hash_bytes(
+                pc.TAG_RID + x_kj + j_bytes + root_nonce + flight_ctx_bytes
+            )[:16]
+            leaf = merkle.leaf_hash(pid_kj, j, root_nonce, flight_ctx_bytes)
             leaves.append(leaf)
 
         levels = merkle.build_tree(leaves)
         mr_k = merkle.root(levels)
 
+        # RootReq_i^(k), Eq. (21): {PK_i, MR_i^(k), RootNonce_k, FlightCtx_k,
+        # Validity_k, Scope_k}. Validity_k/Scope_k already live nested inside
+        # FlightCtx_k in this codebase's established simplification (see
+        # ta_phase2_enroll_process.py), so they're bound in via
+        # flight_ctx's own canonical bytes, not sent as separate fields.
         root_requests.append({
             "k": k,
             "pk_i": PK_i,
-            "hd1": HD1,
-            "hd2": HD2,
-            "c1": C1,
-            "c2": C2,
             "mr_k": mr_k,
             "root_nonce": root_nonce,
             "flight_ctx": flight_ctx,
@@ -145,8 +164,8 @@ def main():
         "sk_i": SK_i,
         "pk_i": PK_i,
         "kc_i": KC_i,
-        "c1": C1,
-        "c2": C2,
+        "c_seed1": c_seed1,
+        "c_seed2": c_seed2,
         "hd1": HD1,
         "hd2": HD2,
         "roots": root_material_for_finalize,

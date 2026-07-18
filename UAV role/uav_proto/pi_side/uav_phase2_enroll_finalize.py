@@ -11,11 +11,32 @@ place, see uav_phase2_enroll_request.py).
 BEFORE RUNNING: copy ta_authrec_response.json from the computer's
 computer_side/out/ into this script's in/ directory.
 
-Produces: out/uav_store_nv.json, this is Store_{D_i}^{NV}, the UAV's
-actual persistent enrollment record. Phase 3 (root activation) will read
-this file. It is safe to keep on the Pi; it contains no PUF secrets,
-seeds, or SK_i, matching the paper's design (Eq. uav_nonvolatile_storage
-explicitly excludes S1, S2, Seed_k, X_{k,j}, SK_i).
+Produces:
+  out/uav_store_nv.json
+      Store_{D_i}^{NV}. Contains no PUF secrets, seeds, or SK_i,
+      matching the paper's design (Eq. uav_nonvolatile_storage
+      explicitly excludes S1, S2, Seed_k, X_{k,j}, SK_i).
+  out/interval_journal_k<k>.bin, one per validated root
+      J_{k,0}/J_{k,1}, Algorithm 1 step 28: InitializeJ_{k,0} <-
+      {g=0, k, j_next=1, checksum}, J_{k,1} left unwritten. This is
+      the durable reservation state Algorithm 4's ReserveNext uses;
+      Phase 3 reads it via interval_journal.recover(), not from
+      uav_store_nv.json (which no longer carries a j_last field --
+      the journal is now the single source of truth for "which
+      interval is next", replacing the previous whole-file-rewrite
+      approach).
+
+ALIGNED WITH THE PAPER: Store_NV now holds c_seed1/c_seed2 (the
+ChallengeSchedule seeds) rather than raw challenge tokens, matching
+what uav_phase2_enroll_request.py now generates.
+
+AuthRec verification payload was checked against Eq. (22) during this
+alignment pass and found to already be correct: Eq. (22) lists PK_i,
+MR_i^(k), RootNonce_k, FlightCtx_k, Validity_k, Scope_k as the signed
+fields, and this codebase's flight_ctx already nests validity/scope as
+sub-fields (see ta_phase2_enroll_process.py), so canonicalizing
+flight_ctx already binds their bytes into the signature -- no change
+needed here.
 """
 
 import sys
@@ -26,6 +47,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
 sys.path.insert(0, os.path.dirname(__file__))
 
 import protocol_common as pc
+import interval_journal as ij
 
 import oqs
 
@@ -73,6 +95,10 @@ def main():
             flight_ctx = root_info["flight_ctx"]
             mr_k = root_info["mr_k"]
 
+            # Eq. (22): Sign_SKTA(PK_i || MR_i^(k) || RootNonce_k ||
+            # FlightCtx_k || Validity_k || Scope_k). Validity_k/Scope_k
+            # are nested inside flight_ctx in this codebase (see module
+            # docstring), so flight_ctx_canonical already binds them.
             flight_ctx_canonical = json.dumps(flight_ctx, sort_keys=True).encode("utf-8")
             expected_payload = pk_i + mr_k + root_nonce + flight_ctx_canonical
 
@@ -84,26 +110,35 @@ def main():
                 print(f"  Refusing to store AuthRec_i^(k={k}), signature check failed.")
                 continue
 
+            # Algorithm 1 step 28: InitializeJ_{k,0} <- {0, k, 1, checksum},
+            # J_{k,1} <- unwritten. One journal file per root.
+            journal_path = ij.journal_path_for_root(OUT_DIR, k)
+            ij.create(journal_path, k)
+            print(f"  Initialized interval journal for root k={k}: "
+                  f"{os.path.basename(journal_path)} (j_next=1)")
+
             store_nv_records.append({
                 "k": k,
                 "root_nonce": root_nonce,
                 "flight_ctx": flight_ctx,
                 "auth_rec_signature": signature,
                 "mr_k": mr_k,
-                "j_last": 0,  # per the paper: unused root starts at interval 0
             })
 
     if not store_nv_records:
         print("\nNo valid AuthRec records to store. Enrollment did not complete.")
         sys.exit(1)
 
-    # Store_{D_i}^{NV} (Eq. uav_nonvolatile_storage): C1, C2, HD1, HD2,
-    # Params, KC_i, and per-root {RootNonce_k, FlightCtx_k, AuthRec_i^(k),
-    # k, Validity_k, j_last^(k)}. Deliberately excludes S1, S2, Seed_k,
-    # X_{k,j}, SK_i, matching the paper's design.
+    # Store_{D_i}^{NV} (Eq. uav_nonvolatile_storage): CSeed1, CSeed2, HD1,
+    # HD2, Params, KC_i, and per-root {RootNonce_k, FlightCtx_k,
+    # AuthRec_i^(k), k, Validity_k}. J_{k,0}/J_{k,1} live in the separate
+    # per-root journal files created above, not embedded in this JSON
+    # document (they're a binary pwrite/fdatasync structure, not JSON-
+    # shaped state). Deliberately excludes S1, S2, Seed_k, X_{k,j}, SK_i,
+    # matching the paper's design.
     store_nv = {
-        "c1": pending["c1"],
-        "c2": pending["c2"],
+        "c_seed1": pending["c_seed1"],
+        "c_seed2": pending["c_seed2"],
         "hd1": pending["hd1"],
         "hd2": pending["hd2"],
         "kc_i": pending["kc_i"],

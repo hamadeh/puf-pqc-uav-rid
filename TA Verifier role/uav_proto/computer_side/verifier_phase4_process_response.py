@@ -2,10 +2,13 @@
 verifier_phase4_process_response.py
 
 Runs on: your computer (Verifier role, V_j).
-Implements: the verifier's half of Algorithm 5 (lightweight) or
-Algorithm 6 (strong), whichever the UAV responded with, decrypt the
-payload, verify AuthRec_i^(k) under PK_TA, check it against AuthDB_Vj,
-verify the Merkle path, and (strong mode only) verify sigma_D.
+Implements: the verifier's half of Algorithm 6, decrypt the payload,
+verify AuthRec_i^(k) under PK_TA, check it against AuthDB_Vj, verify the
+Merkle path, and verify sigma_D. The paper's final protocol has no
+lightweight mode (see uav_phase4_session_and_respond.py's docstring for
+why); this script always does the full Algorithm 6 verification now,
+where an earlier version branched on a "mode" field the response no
+longer carries.
 
 BEFORE RUNNING: copy uav_response.json from the Pi's pi_side/out/ into
 this script's in/ directory.
@@ -19,6 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
 import protocol_common as pc
 import crypto_primitives as cp
 import merkle
+import tuple_hash256
 
 import oqs
 
@@ -47,19 +51,36 @@ def main():
     pk_ta = ta_public["pk_ta"]
 
     print("Phase 4: On-demand authentication, verifier processing response")
-    print(f"Response mode: {response['mode']}")
+
+    # --- ReqID (Eq. 10): recompute independently, cross-check against
+    # what the UAV echoed back, rather than trusting it blindly. ---
+    h_req_auth = cp.hash_bytes(pending["req_auth_bytes"])
+    req_id = pc.compute_req_id(pending["req_auth_bytes"])
+    if req_id != response["req_id"]:
+        print("REJECT: ReqID mismatch (response does not match this request).")
+        sys.exit(1)
 
     # --- Recover shared secret and session key ---
     with oqs.KeyEncapsulation(ml_kem_alg, pending["dk_vj"]) as kem:
         ss = kem.decap_secret(response["ct"])
 
-    h_req_auth = cp.hash_bytes(pending["req_auth_bytes"])
-    k_sess_full = cp.kdf(ss, pending["n_v"], pending["pid"],
+    k_sess_full = cp.kdf(ss, pending["n_v"], pending["auth_ref"],
                           str(pending["ts_v"]).encode("utf-8"),
                           h_req_auth, pc.TAG_RID_AUTH)
     k_sess = k_sess_full[:16]
 
-    ad = pending_scope = (auth_db["cert_vj"]["scope_j"].encode("utf-8") + h_req_auth)
+    # AEAD nonce, Eq. (11): deterministic, Trunc128(H256("AEAD-Nonce" ||
+    # ReqID || ct)). Cross-check against what the response actually used
+    # before trusting it for decryption.
+    expected_nonce = pc.compute_aead_nonce(req_id, response["ct"])
+    if expected_nonce != response["nonce"]:
+        print("REJECT: AEAD nonce does not match the deterministic Eq. (11) derivation.")
+        sys.exit(1)
+
+    ad = pc.canonical_json_bytes({
+        "req_id": req_id, "ct": response["ct"], "n_a": response["nonce"],
+        "h_req_auth": h_req_auth,
+    })
     plaintext = cp.aead_decrypt(k_sess, response["nonce"], ad, response["ciphertext"])
     if plaintext is None:
         print("REJECT: AEAD decryption/authentication failed.")
@@ -69,7 +90,6 @@ def main():
     print("  Decryption: OK")
 
     # --- Find the matching root record in AuthDB_Vj ---
-    mr_from_payload = None
     matching_record = None
     for rec in auth_db["root_records"]:
         if rec["pk_i"] and payload.get("root_nonce") and \
@@ -96,47 +116,47 @@ def main():
         sys.exit(1)
     print("  AuthRec_i^(k): VALID")
 
-    # --- Verify Merkle path ---
+    # --- Verify Merkle path (Eq. 13, via the now-shared merkle.leaf_hash/
+    # verify_path -- previously this script reimplemented the walk
+    # locally with a plain H256 hash(left+right), not the paper's
+    # H384/TupleHash leaf/node construction). flight_ctx comes from this
+    # verifier's own AuthDB record, not the payload's copy of it, so a
+    # malicious payload can't substitute a different context. ---
     j = payload["j"]
     pid_kj = payload["pid"]
     root_nonce = payload["root_nonce"]
-    leaf = cp.hash_bytes(pc.TAG_LEAF + pid_kj + j.to_bytes(4, "big") + root_nonce)
-
-    computed = leaf
-    idx = j
-    for sibling in payload["auth_path"]:
-        if idx % 2 == 0:
-            computed = cp.hash_bytes(computed + sibling)
-        else:
-            computed = cp.hash_bytes(sibling + computed)
-        idx //= 2
+    flight_ctx_bytes = pc.canonical_json_bytes(matching_record["flight_ctx"])
+    leaf = merkle.leaf_hash(pid_kj, j, root_nonce, flight_ctx_bytes)
 
     mr_k = matching_record["mr_k"]
-    merkle_valid = (computed == mr_k)
+    merkle_valid = merkle.verify_path(leaf, j, payload["auth_path"], mr_k)
     print(f"  Merkle path: {'VALID' if merkle_valid else 'INVALID'}")
 
     if not merkle_valid:
         print("REJECT: Merkle path does not verify against MR_i^(k).")
         sys.exit(1)
 
-    if response["mode"] == "lightweight":
-        print("\nACCEPT (lightweight): pseudonym is bound to an authorized "
-              "Merkle root. Hardware possession demonstrated via X_k,j, "
-              "no non-repudiable signing evidence.")
-    else:
-        sigma_d = payload["sigma_d"]
-        t_h = cp.hash_bytes(
-            pid_kj + mr_k + root_nonce + pending["n_v"] +
-            str(payload["ts_d"]).encode("utf-8") + response["ct"] +
-            h_req_auth + b"S" + matching_record["flight_ctx"]["scope"].encode("utf-8")
-        )
-        with oqs.Signature(ml_dsa_alg) as verifier:
-            sig_valid = verifier.verify(t_h, sigma_d, matching_record["pk_i"])
-        print(f"  Transcript signature (sigma_D): {'VALID' if sig_valid else 'INVALID'}")
-        if not sig_valid:
-            print("REJECT: sigma_D does not verify under PK_i.")
-            sys.exit(1)
-        print("\nACCEPT (strong): signing identity and Merkle root both bound.")
+    # --- Verify sigma_D (Algorithm 6 step 20-21). T_H recomputed with the
+    # same H384/TupleHash construction and full field set the UAV used
+    # (Algorithm 6 step 13): AuthRef, PID_{k,jcur}, jcur, MR_i^(k),
+    # RootNonce_k, FlightCtx_k, N_V, TS_D, ct, H256(ReqAuthWire). An
+    # earlier version of this check used H256 instead of H384, the wrong
+    # domain tag, and only flight_ctx["scope"] instead of the full
+    # context -- fixed to match uav_phase4_session_and_respond.py. ---
+    sigma_d = payload["sigma_d"]
+    t_h = tuple_hash256.tuple_hash256(
+        pc.TAG_AUTH_TRANSCRIPT, pending["auth_ref"], pid_kj, j,
+        mr_k, root_nonce, flight_ctx_bytes,
+        pending["n_v"], str(payload["ts_d"]).encode("utf-8"), response["ct"], h_req_auth,
+    )
+    with oqs.Signature(ml_dsa_alg) as verifier:
+        sig_valid = verifier.verify(t_h, sigma_d, matching_record["pk_i"])
+    print(f"  Transcript signature (sigma_D): {'VALID' if sig_valid else 'INVALID'}")
+    if not sig_valid:
+        print("REJECT: sigma_D does not verify under PK_i.")
+        sys.exit(1)
+
+    print("\nACCEPT: signing identity and Merkle root both bound.")
 
 
 if __name__ == "__main__":

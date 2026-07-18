@@ -5,35 +5,37 @@ Runs on: the Pi 5 (UAV role, D_i). Only the UAV. This phase involves no
 TA and no verifier, by design, that's the whole point of Phase 3 in your
 protocol (see the "no TA contact" note in your own overview figure).
 
-Implements: Algorithm 3 (Pre-Flight Root Activation and Remote ID
-Broadcast), both halves: activation once before "takeoff", then the
-per-interval broadcast loop.
+Implements: Algorithm 3 (Pre-Flight Root Activation), and Algorithm 4
+(Crash-Consistent Pseudonym Reservation and Broadcast).
 
-BEFORE RUNNING: this reads uav_store_nv.json, which
-uav_phase2_enroll_finalize.py produces. Run Phase 2 first if you haven't.
+BEFORE RUNNING: this reads uav_store_nv.json (from uav_phase2_enroll_
+finalize.py) and this root's interval_journal_k<k>.bin (from the same
+script; Algorithm 1 step 28).
 
 Produces:
-  out/uav_store_nv.json (updated)
-      j_last^(k) is written back after EVERY interval, not just at the
-      end, on purpose. This is what makes the reboot-recovery property
-      your paper describes actually true here: if this script is killed
-      mid-loop, the next run picks up from the last persisted interval,
-      not from zero.
+  interval_journal_k<k>.bin (updated)
+      ReserveNext(k, j+1) durably commits the next interval index
+      BEFORE the corresponding packet is transmitted (Algorithm 4 step
+      8), via a real pwrite()+fdatasync()+read-back-validate cycle
+      (interval_journal.py), not by rewriting the whole
+      uav_store_nv.json file every interval the way this script used
+      to. That whole-file rewrite was not the crash-consistent
+      mechanism Table 11 describes; this is.
 
   out/broadcast_log.jsonl
-      One JSON line per transmitted RIDMsg_{k,j}. This is standing in for
-      the actual Bluetooth/Wi-Fi broadcast, there's no radio involved.
-      This file is what a Phase 4 verifier script will later read from to
-      simulate "observing" a broadcast pseudonym. Appended to, not
-      overwritten, so multiple runs accumulate a longer capture.
+      One JSON line per transmitted RIDMsg_{k,j}. This is standing in
+      for the actual Bluetooth/Wi-Fi broadcast, there's no radio
+      involved. Appended to, not overwritten.
 
-NOTE ON THE EMULATED PUF: puf_emulated.puf_response() is deterministic
-per challenge with zero noise (see its docstring). That means FE.Rec's
-error-correction path is never actually exercised by this script, S2
-comes back byte-identical to enrollment every time, so decode() always
-succeeds trivially. If you want to test the noisy-reconstruction path
-later, that needs to be reintroduced deliberately, it isn't happening
-here right now.
+ALIGNED WITH THE PAPER: PID/leaf construction now includes FlightCtx_k
+(Algorithm 1 line 17) and uses merkle.leaf_hash() (H384/TupleHash, Eq.
+13), matching what uav_phase2_enroll_request.py now builds -- a root
+enrolled under the old construction will not reactivate correctly
+under this version, and vice versa; re-enroll after this change.
+Response acquisition for S2 reconstruction now runs the real
+ChallengeSchedule -> MajorityPUF -> FE.Rec pipeline via
+fuzzy_extractor.rec_from_seed(), not a single noiseless
+puf_response() call.
 """
 
 import sys
@@ -47,19 +49,26 @@ sys.path.insert(0, os.path.dirname(__file__))
 import protocol_common as pc
 import crypto_primitives as cp
 import merkle
-import puf_emulated
 import fuzzy_extractor
+import interval_journal as ij
 
 IN_DIR = os.path.join(os.path.dirname(__file__), "in")
 OUT_DIR = os.path.join(os.path.dirname(__file__), "out")
 
 
 def select_root(store_nv: dict, n: int):
-    """Pick the first root with unused intervals remaining (j_last < n)."""
+    """Pick the first root whose journal reports unused intervals remaining (j_next <= n)."""
     for root in store_nv["roots"]:
-        if root["j_last"] < n:
-            return root
-    return None
+        journal_path = ij.journal_path_for_root(OUT_DIR, root["k"])
+        recovered = ij.recover(journal_path)
+        if recovered is None:
+            print(f"  WARNING: root k={root['k']} journal recovery failed "
+                  f"(both slots invalid), skipping this root.")
+            continue
+        _, record = recovered
+        if record["j_next"] <= n:
+            return root, journal_path, record["j_next"]
+    return None, None, None
 
 
 def synthetic_telemetry(j: int) -> dict:
@@ -83,44 +92,41 @@ def main():
         sys.exit(1)
 
     store_nv = pc.read_message(store_path)
-    n = None  # recovered from flight_ctx below
 
     print("Phase 3: Pre-Flight Root Activation and Remote ID Broadcast")
 
-    # --- pick a root with intervals remaining ---
-    # n isn't stored top-level in Store_D_i^NV; read it from the first
-    # root's flight_ctx, all roots share the same n in this prototype.
     if not store_nv["roots"]:
         print("ERROR: no roots in Store_D_i^NV. Enrollment did not complete.")
         sys.exit(1)
     n = store_nv["roots"][0]["flight_ctx"]["n"]
 
-    root = select_root(store_nv, n)
+    root, journal_path, j_next = select_root(store_nv, n)
     if root is None:
         print("Root exhausted: no root with unused intervals remains.")
         print("Select another authorized record or trigger renewal (Phase 2).")
         sys.exit(1)
 
     k = root["k"]
-    print(f"Activating root k={k} (j_last={root['j_last']}, n={n})")
+    print(f"Activating root k={k} (j_next={j_next}, n={n})")
 
-    # --- Activation ---
-    S2 = fuzzy_extractor.fe_rec(
-        puf_emulated.puf_response(store_nv["c2"], 64), store_nv["hd2"]
-    )
+    # --- Activation (Algorithm 3) ---
+    S2 = fuzzy_extractor.rec_from_seed(store_nv["c_seed2"], store_nv["hd2"])
     if S2 is None:
         print("ERROR: FE.Rec failed to reconstruct S2. Cannot activate this root.")
         sys.exit(1)
 
     seed_k = cp.kdf(S2, root["root_nonce"], k.to_bytes(4, "big"), pc.TAG_MERKLE_ROOT)
+    flight_ctx_bytes = pc.canonical_json_bytes(root["flight_ctx"])
 
     leaves = []
     pids = []
     for j in range(n):
         j_bytes = j.to_bytes(4, "big")
         x_kj = cp.kdf(seed_k, j_bytes, pc.TAG_INTERVAL_SECRET)
-        pid_kj = cp.hash_bytes(pc.TAG_RID + x_kj + j_bytes + root["root_nonce"])[:16]
-        leaf = cp.hash_bytes(pc.TAG_LEAF + pid_kj + j_bytes + root["root_nonce"])
+        pid_kj = cp.hash_bytes(
+            pc.TAG_RID + x_kj + j_bytes + root["root_nonce"] + flight_ctx_bytes
+        )[:16]
+        leaf = merkle.leaf_hash(pid_kj, j, root["root_nonce"], flight_ctx_bytes)
         leaves.append(leaf)
         pids.append(pid_kj)
 
@@ -135,39 +141,46 @@ def main():
     print(f"Root check passed: recomputed root matches MR_i^(k) = {recomputed_root.hex()[:16]}...")
 
     # ActiveState_k lives only here, in memory, for the life of this script.
-    # It is never written to uav_store_nv.json or any other file.
     active_state = {
         j: {"pid": pids[j], "leaf": leaves[j], "auth_path": merkle.auth_path(levels, j)}
         for j in range(n)
     }
     del S2, seed_k  # best-effort; see README on Python's lack of secure erasure
 
-    j0 = root["j_last"] + 1
-    if j0 > n:
-        print("Root exhausted immediately (j_last already at n).")
+    if j_next > n:
+        print("Root exhausted immediately (j_next already past n).")
         sys.exit(1)
 
-    print(f"Activation complete. Broadcasting will resume from interval j={j0}.")
+    print(f"Activation complete. Broadcasting will resume from interval j={j_next}.")
 
-    # --- Broadcast loop ---
-    delta_t = store_nv["roots"][0]["flight_ctx"]["delta_t"]
+    # --- Broadcast loop (Algorithm 4) ---
+    delta_t = root["flight_ctx"]["delta_t"]
     log_path = os.path.join(OUT_DIR, "broadcast_log.jsonl")
     os.makedirs(OUT_DIR, exist_ok=True)
 
     t_activation = time.time()
-    j = j0
+    j = j_next
 
     print(f"Starting broadcast loop (interval={delta_t}s, up to j={n})."
-          f" Ctrl+C to stop early, progress is saved after every interval.")
+          f" Ctrl+C to stop early; the journal durably tracks progress"
+          f" after every interval, so a restart resumes correctly on its own.")
 
     try:
         while j <= n:
             elapsed = time.time() - t_activation
-            expected_j = j0 + int(elapsed // delta_t)
+            expected_j = j_next + int(elapsed // delta_t)
             if expected_j > j:
                 j = expected_j
                 if j > n:
                     break
+
+            # Algorithm 4 step 8: reserve-before-use. A crash between this
+            # durable commit and the transmission below consumes interval j
+            # without broadcasting it (a "skipped index", not a failure).
+            if not ij.reserve_next(journal_path, k, j + 1):
+                print(f"  ReserveNext(k={k}, j+1={j + 1}) FAILED: suppressing "
+                      f"transmission, entering fail-safe state.")
+                break
 
             pid_hex = active_state[j - 1]["pid"].hex()
             telem = synthetic_telemetry(j)
@@ -182,21 +195,19 @@ def main():
             with open(log_path, "a") as f:
                 f.write(json.dumps(rid_msg) + "\n")
 
-            print(f"  [j={j}/{n}] broadcast PID={pid_hex[:16]}...")
-
-            # persist progress immediately, this is the reboot-recovery guarantee
-            root["j_last"] = j
-            pc.write_message(store_path, store_nv)
+            print(f"  [j={j}/{n}] reserved + broadcast PID={pid_hex[:16]}...")
 
             j += 1
             time.sleep(delta_t)
 
     except KeyboardInterrupt:
-        print(f"\nStopped early at j={root['j_last']}. State is saved; "
-              f"rerunning this script will resume from j={root['j_last']+1}.")
+        recovered = ij.recover(journal_path)
+        resumed_from = recovered[1]["j_next"] if recovered else "?"
+        print(f"\nStopped early. Journal durably at j_next={resumed_from}; "
+              f"rerunning this script will resume from there.")
 
     print(f"\nBroadcast log: {log_path}")
-    print(f"Updated Store_D_i^NV: {store_path} (j_last={root['j_last']})")
+    print(f"Journal: {journal_path}")
 
 
 if __name__ == "__main__":

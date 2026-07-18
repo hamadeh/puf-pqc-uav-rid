@@ -2,7 +2,7 @@
 verifier_phase4_request.py
 
 Runs on: your computer (Verifier role, V_j).
-Implements: Algorithm 4, the verifier's half, generate a nonce and
+Implements: Algorithm 5, the verifier's half, generate a nonce and
 ephemeral ML-KEM pair, form ReqAuth around a captured pseudonym, and sign it.
 
 BEFORE RUNNING: copy the Pi's pi_side/out/broadcast_log.jsonl into this
@@ -10,11 +10,11 @@ script's in/ directory (simulating a receiver having captured Remote ID
 broadcasts). This script reads the LAST line of that file, standing in
 for "the most recently observed pseudonym."
 
-ReqAuth carries PID, the raw pseudonym bytes, not PID_k,j. A real
+ReqAuth carries AuthRef, the raw observed pseudonym bytes (Profile P: a
 verifier has no way to know which root or interval produced a given
 broadcast, that opacity is the entire point of Phase 3, so it can only
-ever send what it actually captured. The UAV recovers k and j itself
-(see uav_phase4_session_and_respond.py's constant-time scan).
+ever send what it actually captured; the UAV recovers k and j itself,
+see uav_phase4_session_and_respond.py's constant-time scan).
 
 Produces:
   out/verifier_reqauth.json: copy to the Pi's pi_side/in/ directory.
@@ -23,8 +23,11 @@ Produces:
       exact ReqAuth bytes this script hashed and signed, the UAV's
       response verification needs to reconstruct H(ReqAuth) identically.
 
-Set MODE_REQ below to "lightweight" or "strong" to choose which
-authentication mode to request.
+ALIGNED WITH THE PAPER: the paper's final Algorithm 5+6 has no
+lightweight/strong mode split ("The protocol has no lower-assurance
+branch"), so MODE_REQ is gone; every request gets the full PUF-rooted
+response. The "pid" field is renamed "auth_ref" to match the paper's
+terminology (AuthRef = PID under Profile P).
 """
 
 import sys
@@ -41,7 +44,6 @@ import oqs
 IN_DIR = os.path.join(os.path.dirname(__file__), "in")
 OUT_DIR = os.path.join(os.path.dirname(__file__), "out")
 
-MODE_REQ =   "strong"  # or    "lightweight"
 VERIFIER_SCOPE = "test-deployment"
 
 
@@ -62,10 +64,9 @@ def main():
         sys.exit(1)
 
     last_broadcast = json.loads(lines[-1])
-    captured_pid = bytes.fromhex(last_broadcast["pid"])
+    auth_ref = bytes.fromhex(last_broadcast["pid"])
     print(f"Phase 4: On-demand authentication, verifier side")
-    print(f"Observed pseudonym (most recent capture): {captured_pid.hex()[:16]}...")
-    print(f"Requesting mode: {MODE_REQ}")
+    print(f"Observed pseudonym (most recent capture): {auth_ref.hex()[:16]}...")
 
     verifier_secret = pc.read_message(secret_path)
     sk_vj = verifier_secret["sk_vj"]
@@ -84,7 +85,7 @@ def main():
     auth_db = pc.read_message(auth_db_path)
     cert_vj = auth_db["cert_vj"]
 
-    # --- Algorithm 4, verifier steps ---
+    # --- Algorithm 5, verifier steps ---
     with oqs.KeyEncapsulation(ml_kem_alg) as kem:
         ek_vj = kem.generate_keypair()
         dk_vj = kem.export_secret_key()
@@ -95,10 +96,9 @@ def main():
     req_auth = {
         "cert_vj": cert_vj,
         "ek_vj": ek_vj,
-        "pid": captured_pid,
+        "auth_ref": auth_ref,
         "n_v": n_v,
         "ts_v": ts_v,
-        "mode_req": MODE_REQ,
         "scope_j": VERIFIER_SCOPE,
     }
     req_auth_bytes = pc.canonical_json_bytes(req_auth)
@@ -108,7 +108,7 @@ def main():
         sigma_vj = signer.sign(h_req_auth)
 
     print(f"Formed and signed ReqAuth ({len(req_auth_bytes)} bytes, "
-          f"signature over H(ReqAuth) per Algorithm 4).")
+          f"signature over H(ReqAuth) per Algorithm 5).")
 
     outgoing_path = os.path.join(OUT_DIR, "verifier_reqauth.json")
     pc.write_message(outgoing_path, {
@@ -125,8 +125,7 @@ def main():
         "n_v": n_v,
         "ts_v": ts_v,
         "req_auth_bytes": req_auth_bytes,
-        "pid": captured_pid,
-        "mode_req": MODE_REQ,
+        "auth_ref": auth_ref,
     })
     print(f"Wrote session pending state (do not copy): {pending_path}")
 

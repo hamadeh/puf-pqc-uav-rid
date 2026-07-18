@@ -6,13 +6,20 @@ Algorithm 4's ReserveNext(k, j+1), plus the recovery rule described in
 Table 11 ("select the checksum-valid slot with the highest generation
 number; fail closed if neither slot validates").
 
-New module, alongside the existing shared/*.py files (none of which
-implement this journal today: uav_phase3_activate_and_broadcast.py
-currently persists j_last by rewriting the whole uav_store_nv.json
-file via protocol_common.write_message() after every interval, which
-is not the crash-consistent pwrite+fdatasync+read-back journal Table
-11 describes). This module is standalone and does not modify that
-script; wiring it in is a separate decision for you to make.
+Originally built standalone for Task B's crash-recovery validation
+harness; now also wired into the live protocol (uav_phase2_enroll_
+finalize.py creates one journal per root at enrollment, Algorithm 1
+step 28; uav_phase3_activate_and_broadcast.py uses ReserveNext() before
+each transmission, Algorithm 4), replacing the previous approach of
+persisting j_last by rewriting the whole uav_store_nv.json file after
+every interval, which was not the crash-consistent pwrite+fdatasync+
+read-back journal Table 11 describes.
+
+ONE JOURNAL FILE PER ROOT: each authorized root k has its own j_next
+counter (Eq. 24 is per-k), so each gets its own 8192-byte journal file
+rather than sharing one. journal_path_for_root() below is the single
+naming convention every caller uses, so Store_NV doesn't need to
+separately record a per-root file path -- it's always derivable from k.
 
 ON-DISK LAYOUT, matching Table 11 exactly: one preallocated 8192-byte
 file containing two alternating 4096-byte generation-numbered slots.
@@ -198,3 +205,8 @@ def reserve_next(path: str, k: int, new_j_next: int) -> bool:
     if readback["generation"] != new_generation or readback["j_next"] != new_j_next:
         return False
     return True
+
+
+def journal_path_for_root(base_dir: str, k: int) -> str:
+    """The one naming convention every caller uses for root k's journal file."""
+    return os.path.join(base_dir, f"interval_journal_k{k}.bin")
