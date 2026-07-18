@@ -59,17 +59,38 @@ _STORE_PATH = os.path.join(os.path.dirname(__file__), ".puf_store.json")
 
 _DEFAULT_FLIP_PROB = 0.05  # emulator testing knob; see module docstring
 
+# In-memory mirror of the on-disk store, lazily loaded once per process.
+# PERFORMANCE NOTE, found the hard way: an earlier version of true_bit()
+# called _load_store() (a full file read + JSON parse) on every single
+# call, with no caching. That's fine for the old one-call-per-challenge
+# design, but acquire_response_reads() now calls it up to
+# NUM_CHALLENGES * READS_PER_CHALLENGE = 1023 * 9 = 9207 times per
+# acquisition -- reloading and re-parsing the whole (growing) store file
+# 9207 times, which made a single evaluate_protocol.py run take minutes
+# instead of the seconds its own docstring promises. This module-level
+# cache is loaded from disk once per process (via _ensure_cache_loaded())
+# and saved back only when a genuinely new challenge is added, not on
+# every read. Cross-process persistence (the actual property that
+# matters, see the OPERATIONAL WARNING below) is unaffected: each
+# separate script invocation (Phase 2, then Phase 3, then Phase 4) still
+# loads the full persisted store fresh at process start.
+_cache = None
 
-def _load_store() -> dict:
+
+def _ensure_cache_loaded() -> None:
+    global _cache
+    if _cache is not None:
+        return
     if os.path.exists(_STORE_PATH):
         with open(_STORE_PATH, "r") as f:
-            return json.load(f)
-    return {}
+            _cache = json.load(f)
+    else:
+        _cache = {}
 
 
-def _save_store(store: dict) -> None:
+def _save_store() -> None:
     with open(_STORE_PATH, "w") as f:
-        json.dump(store, f)
+        json.dump(_cache, f)
 
 
 def true_bit(challenge: int) -> int:
@@ -79,12 +100,12 @@ def true_bit(challenge: int) -> int:
     pair is faster", a fixed property of one emulated device, not
     something that changes between enrollment and later reconstruction.
     """
-    store = _load_store()
+    _ensure_cache_loaded()
     key = str(challenge)
-    if key not in store:
-        store[key] = secrets.randbelow(2)
-        _save_store(store)
-    return store[key]
+    if key not in _cache:
+        _cache[key] = secrets.randbelow(2)
+        _save_store()
+    return _cache[key]
 
 
 def noisy_read(challenge: int, flip_prob: float = _DEFAULT_FLIP_PROB) -> int:
@@ -106,15 +127,34 @@ def acquire_response_reads(challenges: list, reads_per_challenge: int = 9,
     reads[i] = a list of reads_per_challenge independent noisy reads of
     challenges[i], the direct input to majority_vote.majority_vote().
     Call once per FE.Gen (enrollment) or FE.Rec (reconstruction)
-    attempt; a fresh call draws fresh noise, as it should.
+    attempt; a fresh call draws fresh noise, as it should. Batches the
+    ground-truth lookup/persistence through the in-memory cache (see
+    above) instead of one disk round trip per read.
     """
-    return [
-        [noisy_read(c, flip_prob) for _ in range(reads_per_challenge)]
-        for c in challenges
-    ]
+    _ensure_cache_loaded()
+    flip_threshold = int(flip_prob * 10 ** 6)
+
+    new_challenges = False
+    reads = []
+    for c in challenges:
+        key = str(c)
+        if key not in _cache:
+            _cache[key] = secrets.randbelow(2)
+            new_challenges = True
+        bit = _cache[key]
+        reads.append([
+            bit ^ (1 if secrets.randbelow(10 ** 6) < flip_threshold else 0)
+            for _ in range(reads_per_challenge)
+        ])
+
+    if new_challenges:
+        _save_store()
+    return reads
 
 
 def reset_store() -> None:
     """Erase all persisted emulated-PUF state (start a 'fresh device')."""
+    global _cache
+    _cache = None
     if os.path.exists(_STORE_PATH):
         os.remove(_STORE_PATH)

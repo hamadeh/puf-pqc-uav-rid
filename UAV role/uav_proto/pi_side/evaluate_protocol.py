@@ -39,6 +39,17 @@ WHAT THIS DOES NOT MEASURE, and why, read before using these numbers:
     oscilloscope, or at minimum a USB in-line power meter) on the Pi's
     supply rail. Nothing here estimates this from CPU time; that would
     be exactly the kind of invented number you shouldn't put in a paper.
+
+ALIGNED WITH THE PAPER (this pass): PUF acquisition/extraction now runs
+the real ChallengeSchedule -> MajorityPUF(9 reads) -> FE.Gen/FE.Rec
+(BCH(1023,943,17)) -> Toeplitz-256 pipeline instead of a single
+noiseless puf_response() call; Merkle leaves include FlightCtx_k and
+use merkle.leaf_hash() (H384/TupleHash) instead of the old H256
+construction with no FlightCtx binding. The "Lightweight authentication"
+row is gone: the paper's final Algorithm 5+6 has no lower-assurance
+branch, so there is nothing to measure there anymore; what used to be
+"Strong authentication" is now simply the on-demand authentication
+compute cost, since it's the only mode.
 """
 
 import sys
@@ -57,8 +68,10 @@ import protocol_common as pc
 import crypto_primitives as cp
 import merkle
 import puf_emulated
+import challenge_schedule
 import fuzzy_extractor
 import seeded_ml_dsa
+import tuple_hash256
 
 import oqs
 
@@ -66,6 +79,7 @@ ML_DSA_ALG = "ML-DSA-65"
 ML_KEM_ALG = "ML-KEM-768"
 DEFAULT_TRIALS = 30
 DEFAULT_N_VALUES = [1024, 16384]
+UAV_CTX = b"uav-001"
 
 
 # ---------------------------------------------------------------------
@@ -127,14 +141,16 @@ def stats_row(name: str, n, samples: list) -> dict:
     }
 
 
-def build_merkle_root(n: int, S2: bytes, root_nonce: bytes, k: int):
+def build_merkle_root(n: int, S2: bytes, root_nonce: bytes, k: int, flight_ctx_bytes: bytes):
     seed_k = cp.kdf(S2, root_nonce, k.to_bytes(4, "big"), pc.TAG_MERKLE_ROOT)
     leaves = []
     for j in range(n):
         j_bytes = j.to_bytes(4, "big")
         x_kj = cp.kdf(seed_k, j_bytes, pc.TAG_INTERVAL_SECRET)
-        pid_kj = cp.hash_bytes(pc.TAG_RID + x_kj + j_bytes + root_nonce)[:16]
-        leaf = cp.hash_bytes(pc.TAG_LEAF + pid_kj + j_bytes + root_nonce)
+        pid_kj = cp.hash_bytes(
+            pc.TAG_RID + x_kj + j_bytes + root_nonce + flight_ctx_bytes
+        )[:16]
+        leaf = merkle.leaf_hash(pid_kj, j, root_nonce, flight_ctx_bytes)
         leaves.append(leaf)
     levels = merkle.build_tree(leaves)
     return merkle.root(levels), levels
@@ -148,36 +164,44 @@ def run_timing_for_n(n: int, trials: int) -> list:
     rows = []
     puf_emulated.reset_store()
 
-    C1, C2 = secrets.token_bytes(16), secrets.token_bytes(16)
-    R1 = puf_emulated.puf_response(C1, 64)
-    R2 = puf_emulated.puf_response(C2, 64)
-    S1, HD1 = fuzzy_extractor.fe_gen(R1)
-    S2, HD2 = fuzzy_extractor.fe_gen(R2)
-    seed_sig = cp.kdf(S1, pc.TAG_ML_DSA, b"uav-001")
+    c_seed1, c_seed2 = secrets.token_bytes(32), secrets.token_bytes(32)
+    challenges1 = challenge_schedule.challenge_schedule(c_seed1)
+    challenges2 = challenge_schedule.challenge_schedule(c_seed2)
+
+    reads1 = puf_emulated.acquire_response_reads(challenges1)
+    reads2 = puf_emulated.acquire_response_reads(challenges2)
+    S1, HD1 = fuzzy_extractor.fe_gen(reads1)
+    S2, HD2 = fuzzy_extractor.fe_gen(reads2)
+    seed_sig = cp.kdf(S1, pc.TAG_ML_DSA, UAV_CTX)
     PK_i, SK_i = seeded_ml_dsa.seeded_keygen(ML_DSA_ALG, seed_sig)
     KC_i = cp.hash_bytes(PK_i)
     root_nonce = secrets.token_bytes(16)
-    mr_k, levels = build_merkle_root(n, S2, root_nonce, 0)
+    flight_ctx = {"k": 0, "delta_t": 1, "n": n, "scope": "test-deployment",
+                  "validity": {"start": "x", "end": "y", "max_intervals": n, "region": "r"}}
+    flight_ctx_bytes = pc.canonical_json_bytes(flight_ctx)
+    mr_k, levels = build_merkle_root(n, S2, root_nonce, 0, flight_ctx_bytes)
 
     rows.append(stats_row(
-        "PUF evaluation (EMULATED, not real hardware)", n,
-        timed_trials(lambda: puf_emulated.puf_response(C1, 64), trials)))
+        "PUF response acquisition (EMULATED, not real hardware; "
+        "ChallengeSchedule + 9 reads/challenge)", n,
+        timed_trials(lambda: puf_emulated.acquire_response_reads(challenges1), trials)))
 
     rows.append(stats_row(
-        "Fuzzy extractor generation (FE.Gen)", n,
-        timed_trials(lambda: fuzzy_extractor.fe_gen(R1), trials)))
+        "Fuzzy extractor generation (FE.Gen: MajorityPUF + BCH(1023,943,17) + Toeplitz-256)", n,
+        timed_trials(lambda: fuzzy_extractor.fe_gen(reads1), trials)))
 
     rows.append(stats_row(
         "Fuzzy extractor reconstruction (FE.Rec)", n,
-        timed_trials(lambda: fuzzy_extractor.fe_rec(R2, HD2), trials)))
+        timed_trials(lambda: fuzzy_extractor.fe_rec(reads2, HD2), trials)))
 
     rows.append(stats_row(
         f"One Merkle-root generation, n={n}", n,
-        timed_trials(lambda: build_merkle_root(n, S2, secrets.token_bytes(16), 0), trials)))
+        timed_trials(lambda: build_merkle_root(
+            n, S2, secrets.token_bytes(16), 0, flight_ctx_bytes), trials)))
 
     def activation():
-        s2 = fuzzy_extractor.fe_rec(puf_emulated.puf_response(C2, 64), HD2)
-        recomputed_mr, _ = build_merkle_root(n, s2, root_nonce, 0)
+        s2 = fuzzy_extractor.fe_rec(reads2, HD2)
+        recomputed_mr, _ = build_merkle_root(n, s2, root_nonce, 0, flight_ctx_bytes)
         return recomputed_mr == mr_k
     rows.append(stats_row(f"Pre-flight root activation, n={n}", n, timed_trials(activation, trials)))
 
@@ -199,32 +223,25 @@ def run_timing_for_n(n: int, trials: int) -> list:
         timed_trials(session_establishment, trials)))
 
     j_index = 0
-    def lightweight():
-        s2 = fuzzy_extractor.fe_rec(puf_emulated.puf_response(C2, 64), HD2)
-        seed_k = cp.kdf(s2, root_nonce, (0).to_bytes(4, "big"), pc.TAG_MERKLE_ROOT)
-        x_kj = cp.kdf(seed_k, j_index.to_bytes(4, "big"), pc.TAG_INTERVAL_SECRET)
-        pid_kj = cp.hash_bytes(pc.TAG_RID + x_kj + j_index.to_bytes(4, "big") + root_nonce)[:16]
-        tau = cp.hash_bytes(x_kj + pid_kj + secrets.token_bytes(16) + b"ts" + b"hreq" + pc.TAG_LIGHTWEIGHT)
-        plaintext = pc.canonical_json_bytes({"pid": pid_kj, "tau": tau})
-        return cp.aead_encrypt(secrets.token_bytes(16), secrets.token_bytes(16), b"ad", plaintext)
-    rows.append(stats_row(
-        "Lightweight authentication (UAV side compute)", n,
-        timed_trials(lightweight, trials)))
+    auth_ref = pids_precomputed[j_index]
 
-    def strong():
-        s1 = fuzzy_extractor.fe_rec(puf_emulated.puf_response(C1, 64), HD1)
-        seed_sig_local = cp.kdf(s1, pc.TAG_ML_DSA, b"uav-001")
+    def on_demand_auth_compute():
+        s1 = fuzzy_extractor.fe_rec(reads1, HD1)
+        seed_sig_local = cp.kdf(s1, pc.TAG_ML_DSA, UAV_CTX)
         pk_i, sk_i = seeded_ml_dsa.seeded_keygen(ML_DSA_ALG, seed_sig_local)
         assert cp.hash_bytes(pk_i) == KC_i
-        t_h = cp.hash_bytes(pk_i + mr_k + root_nonce + secrets.token_bytes(16) +
-                             b"ts" + b"ct" + b"hreq" + b"S")
+        t_h = tuple_hash256.tuple_hash256(
+            pc.TAG_AUTH_TRANSCRIPT, auth_ref, auth_ref, j_index,
+            mr_k, root_nonce, flight_ctx_bytes,
+            secrets.token_bytes(16), b"ts", b"ct", b"hreq",
+        )
         with oqs.Signature(ML_DSA_ALG, sk_i) as signer:
             sigma_d = signer.sign(t_h)
         plaintext = pc.canonical_json_bytes({"sigma_d": sigma_d})
         return cp.aead_encrypt(secrets.token_bytes(16), secrets.token_bytes(16), b"ad", plaintext)
     rows.append(stats_row(
-        "Strong authentication (UAV side compute, incl. key regen)", n,
-        timed_trials(strong, trials)))
+        "On-demand authentication (UAV side compute, incl. key regen)", n,
+        timed_trials(on_demand_auth_compute, trials)))
 
     return rows
 
@@ -248,10 +265,11 @@ def measure_sizes(n: int) -> list:
     rows.append({"object": "ML-KEM-768 ciphertext (ct)", "n": n, "size_bytes": len(ct_sample)})
 
     puf_emulated.reset_store()
-    C1, C2 = secrets.token_bytes(16), secrets.token_bytes(16)
-    _, HD1 = fuzzy_extractor.fe_gen(puf_emulated.puf_response(C1, 64))
-    _, HD2 = fuzzy_extractor.fe_gen(puf_emulated.puf_response(C2, 64))
+    c_seed1, c_seed2 = secrets.token_bytes(32), secrets.token_bytes(32)
+    _, HD1 = fuzzy_extractor.gen_from_seed(c_seed1)
+    _, HD2 = fuzzy_extractor.gen_from_seed(c_seed2)
     rows.append({"object": "Fuzzy extractor helper data (HD1 or HD2)", "n": n, "size_bytes": len(HD1)})
+    assert len(HD1) == len(HD2)
 
     # Store_D_i^NV for one root at this n (the actual persisted UAV record)
     root_nonce = secrets.token_bytes(16)
@@ -260,11 +278,14 @@ def measure_sizes(n: int) -> list:
         "flight_ctx": {"n": n, "delta_t": 1, "scope": "test-deployment",
                        "validity": {"start": "x", "end": "y", "max_intervals": n, "region": "r"}},
         "auth_rec_signature": sig_sample,
-        "mr_k": secrets.token_bytes(32),
-        "j_last": 0,
+        "mr_k": secrets.token_bytes(48),  # H384/TupleHash256 output, not 32 bytes
     }
     serialized = pc.canonical_json_bytes(store_nv_one_root)
     rows.append({"object": f"Store_D_i^NV, one root record, n={n}", "n": n, "size_bytes": len(serialized)})
+
+    # Interval journal, per root (Eq. 24 / Table 11), independent of n
+    rows.append({"object": "Interval journal file, one root (2x4096-byte slots)",
+                 "n": n, "size_bytes": 8192})
 
     return rows
 
@@ -343,8 +364,10 @@ def main():
     print(f"Wrote {timing_csv}")
     print(f"Wrote {sizes_csv}")
     print("\nReminders before using these numbers in your paper:")
-    print("  - PUF evaluation row is emulator overhead, not real RO-PUF latency.")
+    print("  - PUF response acquisition row is emulator overhead, not real RO-PUF latency.")
     print("  - Energy (mJ): not measured here, needs real power instrumentation.")
+    print("  - These numbers reflect whichever crypto_primitives.py backend is live "
+          "(placeholder or real Ascon); check that file before reporting Table 4/6/7.")
 
 
 if __name__ == "__main__":
