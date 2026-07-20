@@ -1,0 +1,23 @@
+{
+  "generated_utc": "2026-07-19T18:59:22Z",
+  "platform": "Linux-6.6.62+rpt-rpi-v8-aarch64-with-glibc2.36",
+  "machine": "aarch64",
+  "python": "3.11.2",
+  "crypto_backend": "Ascon-Hash256 / Ascon-AEAD128 via native ascon-c",
+  "ml_dsa": "ML-DSA-65",
+  "ml_kem": "ML-KEM-768",
+  "n_values": [
+    1024,
+    16384
+  ],
+  "trials": 30,
+  "warmup_runs_discarded": 1,
+  "puf_vector_source": "/home/Hala/uav_proto/puf_vectors_stage128.json",
+  "puf_vector_channels": [
+    "S1",
+    "S2"
+  ],
+  "puf_acquisition_latency": "unavailable",
+  "transport_latency": "not measured",
+  "energy": "not measured"
+}

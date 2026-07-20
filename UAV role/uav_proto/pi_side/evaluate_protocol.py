@@ -1,6 +1,14 @@
 """
 evaluate_protocol.py
 
+NOTICE: this is the historical Table 4/6/7 harness.  Measurements of the
+final Profile-P implementation belong in benchmark_final_protocol.py, which
+adds full PIDIndex-aware activation, supplied-vector reconstruction, final
+wire-format request/response sizes, primitive timings, and complete
+UAV/verifier software latency.  Keep this script for reproducing the older
+paper tables; do not use its activation or authentication rows as final
+protocol measurements.
+
 The single script to run on the Pi 5 to get everything your paper's
 Table 4, 6, and 7 need. Supersedes benchmark_phases.py (still there, but
 this is the one to use going forward): adds automatic system-info

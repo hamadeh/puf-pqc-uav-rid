@@ -96,6 +96,24 @@ def decode_canonical_json(data: bytes) -> dict:
     return _decode_value(encoded)
 
 
+def serialize_message_bytes(fields: dict) -> bytes:
+    """
+    Serialize the exact JSON representation used by write_message().
+
+    This public in-memory form lets benchmarks include serialization in
+    complete software latency and report the exact transmitted byte size
+    without creating temporary files.
+    """
+    encoded = {key: _encode_value(value) for key, value in fields.items()}
+    return json.dumps(encoded, indent=2).encode("utf-8")
+
+
+def deserialize_message_bytes(data: bytes) -> dict:
+    """Inverse of serialize_message_bytes(), without filesystem I/O."""
+    encoded = json.loads(data.decode("utf-8"))
+    return {key: _decode_value(value) for key, value in encoded.items()}
+
+
 def write_message(filepath: str, fields: dict) -> None:
     """
     Write a message to a JSON file, standing in for sending it over a real

@@ -1,5 +1,0 @@
-interruption_point,forced_interruptions,invalid_single_slot_records,both_slots_invalid,pseudonym_reuse_count,unused_indices_consumed,max_recovery_time_ms
-before_slot_write,100,0,0,0,0,0.1684
-during_write,100,100,0,0,0,0.1981
-after_fdatasync_before_transmission,100,0,0,0,100,0.1874
-immediately_after_transmission,100,0,0,0,0,0.2605

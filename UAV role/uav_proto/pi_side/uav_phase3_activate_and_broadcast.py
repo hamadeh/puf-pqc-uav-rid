@@ -51,6 +51,7 @@ import crypto_primitives as cp
 import merkle
 import fuzzy_extractor
 import interval_journal as ij
+import pid_index
 
 IN_DIR = os.path.join(os.path.dirname(__file__), "in")
 OUT_DIR = os.path.join(os.path.dirname(__file__), "out")
@@ -141,9 +142,14 @@ def main():
     print(f"Root check passed: recomputed root matches MR_i^(k) = {recomputed_root.hex()[:16]}...")
 
     # ActiveState_k lives only here, in memory, for the life of this script.
+    # PIDIndex is part of activation under the final Profile-P wire format:
+    # Phase 4 receives only an observed PID and uses this sorted index to
+    # recover j in O(log n). Merkle paths are extracted from `levels` on
+    # demand instead of precomputing n separate paths.
     active_state = {
-        j: {"pid": pids[j], "leaf": leaves[j], "auth_path": merkle.auth_path(levels, j)}
-        for j in range(n)
+        "pids": pids,
+        "levels": levels,
+        "pid_index": pid_index.build_pid_index(pids),
     }
     del S2, seed_k  # best-effort; see README on Python's lack of secure erasure
 
@@ -182,7 +188,7 @@ def main():
                       f"transmission, entering fail-safe state.")
                 break
 
-            pid_hex = active_state[j - 1]["pid"].hex()
+            pid_hex = active_state["pids"][j - 1].hex()
             telem = synthetic_telemetry(j)
             rid_msg = {
                 "k": k,

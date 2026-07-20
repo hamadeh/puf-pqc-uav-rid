@@ -49,6 +49,7 @@ import merkle
 import fuzzy_extractor
 import tuple_hash256
 import seeded_ml_dsa
+import pid_index
 
 import oqs
 
@@ -60,10 +61,10 @@ TIMESTAMP_TOLERANCE_SECONDS = 3600
 
 
 def rebuild_active_root_table(store_nv: dict, root: dict, n: int):
-    """Recomputes {j: (pid, leaf)} for every interval of the given root."""
+    """Rebuild pids, Merkle levels, FlightCtx bytes, and sorted PIDIndex."""
     S2 = fuzzy_extractor.rec_from_seed(store_nv["c_seed2"], store_nv["hd2"])
     if S2 is None:
-        return None, None, None
+        return None, None, None, None
 
     seed_k = cp.kdf(S2, root["root_nonce"], root["k"].to_bytes(4, "big"), pc.TAG_MERKLE_ROOT)
     del S2
@@ -83,21 +84,12 @@ def rebuild_active_root_table(store_nv: dict, root: dict, n: int):
     del seed_k
 
     levels = merkle.build_tree(leaves)
-    return pids, levels, flight_ctx_bytes
+    return pids, levels, flight_ctx_bytes, pid_index.build_pid_index(pids)
 
 
-def constant_time_find_j(pids: list, target_pid: bytes) -> int:
-    """
-    Scans every entry regardless of whether an earlier match was already
-    found, so response timing doesn't depend on where (or whether) the
-    match occurs. See Section III.F.1's constant-time lookup requirement.
-    """
-    found_j = -1
-    for j, pid in enumerate(pids):
-        match = (pid == target_pid)
-        # bitwise-style select without branching on `match` for the assignment
-        found_j = j if (match and found_j == -1) else found_j
-    return found_j
+def indexed_find_j(pid_index_entries: list, target_pid: bytes) -> int:
+    """Final-wire-format AuthRef lookup through the sorted PIDIndex."""
+    return pid_index.indexed_find_j(pid_index_entries, target_pid)
 
 
 def main():
@@ -166,7 +158,7 @@ def main():
         abort_silently("scope mismatch (verifier certificate vs. root)")
     print("  Freshness and scope: OK")
 
-    # --- Constant-time PID lookup (Algorithm 5 step 11) ---
+    # --- Indexed PID lookup under the final Profile-P wire format ---
     n = store_nv["roots"][0]["flight_ctx"]["n"]
     active_root = None
     for r in store_nv["roots"]:
@@ -179,15 +171,18 @@ def main():
     if active_root is None:
         abort_silently("no active root found (has Phase 3 been run?)")
 
-    pids, levels, flight_ctx_bytes = rebuild_active_root_table(store_nv, active_root, n)
+    pids, levels, flight_ctx_bytes, pid_index_entries = rebuild_active_root_table(
+        store_nv, active_root, n
+    )
     if pids is None:
         abort_silently("FE.Rec failed to reconstruct S2")
 
     auth_ref = req_auth["auth_ref"]
-    j_index = constant_time_find_j(pids, auth_ref)
+    j_index = indexed_find_j(pid_index_entries, auth_ref)
     if j_index == -1:
         abort_silently("no cached entry matches the received AuthRef")
-    print(f"  PID lookup: matched interval j={j_index + 1} (constant-time scan over n={n})")
+    print(f"  PID lookup: matched interval j={j_index + 1} "
+          f"(sorted PIDIndex, n={n})")
 
     pid_kj = pids[j_index]
     auth_path = merkle.auth_path(levels, j_index)

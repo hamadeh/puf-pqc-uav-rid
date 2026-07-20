@@ -1,0 +1,7 @@
+message,n,serialized_bytes,encoding
+Verifier request,1024,20120,exact write_message-compatible indented UTF-8 JSON
+UAV response,1024,32389,exact write_message-compatible indented UTF-8 JSON
+Decrypted UAV payload,1024,14984,canonical compact UTF-8 JSON before Ascon-AEAD
+Verifier request,16384,20120,exact write_message-compatible indented UTF-8 JSON
+UAV response,16384,33299,exact write_message-compatible indented UTF-8 JSON
+Decrypted UAV payload,16384,15439,canonical compact UTF-8 JSON before Ascon-AEAD

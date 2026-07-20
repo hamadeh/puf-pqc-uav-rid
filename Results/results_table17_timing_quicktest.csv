@@ -1,0 +1,5 @@
+operation,n,mean_ms,std_ms,min_ms,max_ms,trials
+"Majority voting, BCH reconstruction, and 256-bit extraction",-,0.6101,0.0989,0.5381,0.8011,5
+"One Merkle-root generation, n=32",32,2.1689,0.1579,1.9626,2.3695,5
+"Pre-flight root activation, n=32",32,4.8566,0.9016,4.0698,6.5895,5
+"On-demand authentication, n=32",32,5.6994,0.1891,5.4684,5.8959,5

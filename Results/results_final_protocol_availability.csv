@@ -1,0 +1,4 @@
+quantity,status,reason
+Physical PUF acquisition latency,unavailable,No live physical PUF required or attached; vectors supplied before timer
+Transport latency,not measured,File serialization measured; no radio/network transport in prototype
+Energy,not measured,Requires external power instrumentation

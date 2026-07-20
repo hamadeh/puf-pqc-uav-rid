@@ -27,17 +27,24 @@ third-party dependency.
 
 import ctypes
 import hashlib
+import os
 
 import oqs
 
 _LIBOQS_PATHS_TO_TRY = [
+    os.environ.get("LIBOQS_LIBRARY", ""),
     "/usr/local/lib/liboqs.so",
+    "/usr/local/lib/liboqs.dylib",
+    "/opt/homebrew/lib/liboqs.dylib",
     "liboqs.so",
+    "liboqs.dylib",
     "liboqs.so.9",
 ]
 
 _liboqs = None
 for _path in _LIBOQS_PATHS_TO_TRY:
+    if not _path:
+        continue
     try:
         _liboqs = ctypes.CDLL(_path)
         break

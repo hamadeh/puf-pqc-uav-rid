@@ -1,0 +1,8 @@
+operation,n,mean_ms,std_ms,min_ms,max_ms,trials
+"Majority voting, BCH reconstruction, and 256-bit extraction",-,0.584,0.1236,0.4825,1.0847,30
+"One Merkle-root generation, n=1024",1024,72.0373,3.805,66.2527,83.003,30
+"Pre-flight root activation, n=1024",1024,86.4111,22.9762,70.5729,201.3758,30
+"On-demand authentication, n=1024",1024,7.241,1.9547,5.316,13.5986,30
+"One Merkle-root generation, n=16384",16384,1237.1663,151.8918,1097.4463,1947.4112,30
+"Pre-flight root activation, n=16384",16384,1506.2819,374.28,1098.3469,2609.6022,30
+"On-demand authentication, n=16384",16384,8.0215,0.9125,6.9212,10.826,30

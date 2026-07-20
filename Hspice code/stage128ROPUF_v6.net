@@ -1,0 +1,606 @@
+* 128-RO LTspice pilot netlist: two banks of 64 ring oscillators
+* Bank A: RO0-RO63; Bank B: RO64-RO127.
+* Purpose: validate oscillator startup, node visibility, and frequency extraction.
+* MATLAB should construct 1023 fixed, unique cross-bank comparisons.
+* This file models local threshold-voltage mismatch sensitivity only unless
+* the SIGMA values are supported by calibrated technology data.
+
+.include "45nm_HP.pm"
+.options plotwinsize=0 numdgt=10 reltol=1e-4 abstol=1e-12 vntol=1e-6
+
+* User parameters
+.param VDDVAL=1.0
+.param VTHRESH={VDDVAL/2}
+.param TSTOP=25n
+.param MAXSTEP=2p
+.param N_RUNS=100
+.param RUN=1
+.param SIGMA_LOCAL_N=46.893m
+.param SIGMA_LOCAL_P=49.158m
+
+* Inverter with local threshold-mismatch sensitivity
+.subckt INV in out vdd vss params: run_step=1
+MN out in vss vss nmos W=200n L=50n delvto={SIGMA_LOCAL_N*gauss(1)+0*run_step}
+MP out in vdd vdd pmos W=400n L=50n delvto={SIGMA_LOCAL_P*gauss(1)+0*run_step}
+.ends INV
+
+* Seven-stage direct-feedback ring oscillator
+* OUT is exposed as a top-level subcircuit pin.
+.subckt RO7 OUT VDD VSS params: run_step=1
+X1 OUT n2 VDD VSS INV params: run_step={run_step}
+X2 n2 n3 VDD VSS INV params: run_step={run_step}
+X3 n3 n4 VDD VSS INV params: run_step={run_step}
+X4 n4 n5 VDD VSS INV params: run_step={run_step}
+X5 n5 n6 VDD VSS INV params: run_step={run_step}
+X6 n6 n7 VDD VSS INV params: run_step={run_step}
+X7 n7 OUT VDD VSS INV params: run_step={run_step}
+* Equal small startup/load capacitance on every RO output.
+CSTART OUT VSS 1f IC=0
+.ends RO7
+
+VDD VDD 0 {VDDVAL}
+VSS VSS 0 0
+
+* 128 oscillators
+* Bank A
+XRO0 ro0_out VDD VSS RO7 params: run_step={RUN}
+XRO1 ro1_out VDD VSS RO7 params: run_step={RUN}
+XRO2 ro2_out VDD VSS RO7 params: run_step={RUN}
+XRO3 ro3_out VDD VSS RO7 params: run_step={RUN}
+XRO4 ro4_out VDD VSS RO7 params: run_step={RUN}
+XRO5 ro5_out VDD VSS RO7 params: run_step={RUN}
+XRO6 ro6_out VDD VSS RO7 params: run_step={RUN}
+XRO7 ro7_out VDD VSS RO7 params: run_step={RUN}
+XRO8 ro8_out VDD VSS RO7 params: run_step={RUN}
+XRO9 ro9_out VDD VSS RO7 params: run_step={RUN}
+XRO10 ro10_out VDD VSS RO7 params: run_step={RUN}
+XRO11 ro11_out VDD VSS RO7 params: run_step={RUN}
+XRO12 ro12_out VDD VSS RO7 params: run_step={RUN}
+XRO13 ro13_out VDD VSS RO7 params: run_step={RUN}
+XRO14 ro14_out VDD VSS RO7 params: run_step={RUN}
+XRO15 ro15_out VDD VSS RO7 params: run_step={RUN}
+XRO16 ro16_out VDD VSS RO7 params: run_step={RUN}
+XRO17 ro17_out VDD VSS RO7 params: run_step={RUN}
+XRO18 ro18_out VDD VSS RO7 params: run_step={RUN}
+XRO19 ro19_out VDD VSS RO7 params: run_step={RUN}
+XRO20 ro20_out VDD VSS RO7 params: run_step={RUN}
+XRO21 ro21_out VDD VSS RO7 params: run_step={RUN}
+XRO22 ro22_out VDD VSS RO7 params: run_step={RUN}
+XRO23 ro23_out VDD VSS RO7 params: run_step={RUN}
+XRO24 ro24_out VDD VSS RO7 params: run_step={RUN}
+XRO25 ro25_out VDD VSS RO7 params: run_step={RUN}
+XRO26 ro26_out VDD VSS RO7 params: run_step={RUN}
+XRO27 ro27_out VDD VSS RO7 params: run_step={RUN}
+XRO28 ro28_out VDD VSS RO7 params: run_step={RUN}
+XRO29 ro29_out VDD VSS RO7 params: run_step={RUN}
+XRO30 ro30_out VDD VSS RO7 params: run_step={RUN}
+XRO31 ro31_out VDD VSS RO7 params: run_step={RUN}
+XRO32 ro32_out VDD VSS RO7 params: run_step={RUN}
+XRO33 ro33_out VDD VSS RO7 params: run_step={RUN}
+XRO34 ro34_out VDD VSS RO7 params: run_step={RUN}
+XRO35 ro35_out VDD VSS RO7 params: run_step={RUN}
+XRO36 ro36_out VDD VSS RO7 params: run_step={RUN}
+XRO37 ro37_out VDD VSS RO7 params: run_step={RUN}
+XRO38 ro38_out VDD VSS RO7 params: run_step={RUN}
+XRO39 ro39_out VDD VSS RO7 params: run_step={RUN}
+XRO40 ro40_out VDD VSS RO7 params: run_step={RUN}
+XRO41 ro41_out VDD VSS RO7 params: run_step={RUN}
+XRO42 ro42_out VDD VSS RO7 params: run_step={RUN}
+XRO43 ro43_out VDD VSS RO7 params: run_step={RUN}
+XRO44 ro44_out VDD VSS RO7 params: run_step={RUN}
+XRO45 ro45_out VDD VSS RO7 params: run_step={RUN}
+XRO46 ro46_out VDD VSS RO7 params: run_step={RUN}
+XRO47 ro47_out VDD VSS RO7 params: run_step={RUN}
+XRO48 ro48_out VDD VSS RO7 params: run_step={RUN}
+XRO49 ro49_out VDD VSS RO7 params: run_step={RUN}
+XRO50 ro50_out VDD VSS RO7 params: run_step={RUN}
+XRO51 ro51_out VDD VSS RO7 params: run_step={RUN}
+XRO52 ro52_out VDD VSS RO7 params: run_step={RUN}
+XRO53 ro53_out VDD VSS RO7 params: run_step={RUN}
+XRO54 ro54_out VDD VSS RO7 params: run_step={RUN}
+XRO55 ro55_out VDD VSS RO7 params: run_step={RUN}
+XRO56 ro56_out VDD VSS RO7 params: run_step={RUN}
+XRO57 ro57_out VDD VSS RO7 params: run_step={RUN}
+XRO58 ro58_out VDD VSS RO7 params: run_step={RUN}
+XRO59 ro59_out VDD VSS RO7 params: run_step={RUN}
+XRO60 ro60_out VDD VSS RO7 params: run_step={RUN}
+XRO61 ro61_out VDD VSS RO7 params: run_step={RUN}
+XRO62 ro62_out VDD VSS RO7 params: run_step={RUN}
+XRO63 ro63_out VDD VSS RO7 params: run_step={RUN}
+* Bank B
+XRO64 ro64_out VDD VSS RO7 params: run_step={RUN}
+XRO65 ro65_out VDD VSS RO7 params: run_step={RUN}
+XRO66 ro66_out VDD VSS RO7 params: run_step={RUN}
+XRO67 ro67_out VDD VSS RO7 params: run_step={RUN}
+XRO68 ro68_out VDD VSS RO7 params: run_step={RUN}
+XRO69 ro69_out VDD VSS RO7 params: run_step={RUN}
+XRO70 ro70_out VDD VSS RO7 params: run_step={RUN}
+XRO71 ro71_out VDD VSS RO7 params: run_step={RUN}
+XRO72 ro72_out VDD VSS RO7 params: run_step={RUN}
+XRO73 ro73_out VDD VSS RO7 params: run_step={RUN}
+XRO74 ro74_out VDD VSS RO7 params: run_step={RUN}
+XRO75 ro75_out VDD VSS RO7 params: run_step={RUN}
+XRO76 ro76_out VDD VSS RO7 params: run_step={RUN}
+XRO77 ro77_out VDD VSS RO7 params: run_step={RUN}
+XRO78 ro78_out VDD VSS RO7 params: run_step={RUN}
+XRO79 ro79_out VDD VSS RO7 params: run_step={RUN}
+XRO80 ro80_out VDD VSS RO7 params: run_step={RUN}
+XRO81 ro81_out VDD VSS RO7 params: run_step={RUN}
+XRO82 ro82_out VDD VSS RO7 params: run_step={RUN}
+XRO83 ro83_out VDD VSS RO7 params: run_step={RUN}
+XRO84 ro84_out VDD VSS RO7 params: run_step={RUN}
+XRO85 ro85_out VDD VSS RO7 params: run_step={RUN}
+XRO86 ro86_out VDD VSS RO7 params: run_step={RUN}
+XRO87 ro87_out VDD VSS RO7 params: run_step={RUN}
+XRO88 ro88_out VDD VSS RO7 params: run_step={RUN}
+XRO89 ro89_out VDD VSS RO7 params: run_step={RUN}
+XRO90 ro90_out VDD VSS RO7 params: run_step={RUN}
+XRO91 ro91_out VDD VSS RO7 params: run_step={RUN}
+XRO92 ro92_out VDD VSS RO7 params: run_step={RUN}
+XRO93 ro93_out VDD VSS RO7 params: run_step={RUN}
+XRO94 ro94_out VDD VSS RO7 params: run_step={RUN}
+XRO95 ro95_out VDD VSS RO7 params: run_step={RUN}
+XRO96 ro96_out VDD VSS RO7 params: run_step={RUN}
+XRO97 ro97_out VDD VSS RO7 params: run_step={RUN}
+XRO98 ro98_out VDD VSS RO7 params: run_step={RUN}
+XRO99 ro99_out VDD VSS RO7 params: run_step={RUN}
+XRO100 ro100_out VDD VSS RO7 params: run_step={RUN}
+XRO101 ro101_out VDD VSS RO7 params: run_step={RUN}
+XRO102 ro102_out VDD VSS RO7 params: run_step={RUN}
+XRO103 ro103_out VDD VSS RO7 params: run_step={RUN}
+XRO104 ro104_out VDD VSS RO7 params: run_step={RUN}
+XRO105 ro105_out VDD VSS RO7 params: run_step={RUN}
+XRO106 ro106_out VDD VSS RO7 params: run_step={RUN}
+XRO107 ro107_out VDD VSS RO7 params: run_step={RUN}
+XRO108 ro108_out VDD VSS RO7 params: run_step={RUN}
+XRO109 ro109_out VDD VSS RO7 params: run_step={RUN}
+XRO110 ro110_out VDD VSS RO7 params: run_step={RUN}
+XRO111 ro111_out VDD VSS RO7 params: run_step={RUN}
+XRO112 ro112_out VDD VSS RO7 params: run_step={RUN}
+XRO113 ro113_out VDD VSS RO7 params: run_step={RUN}
+XRO114 ro114_out VDD VSS RO7 params: run_step={RUN}
+XRO115 ro115_out VDD VSS RO7 params: run_step={RUN}
+XRO116 ro116_out VDD VSS RO7 params: run_step={RUN}
+XRO117 ro117_out VDD VSS RO7 params: run_step={RUN}
+XRO118 ro118_out VDD VSS RO7 params: run_step={RUN}
+XRO119 ro119_out VDD VSS RO7 params: run_step={RUN}
+XRO120 ro120_out VDD VSS RO7 params: run_step={RUN}
+XRO121 ro121_out VDD VSS RO7 params: run_step={RUN}
+XRO122 ro122_out VDD VSS RO7 params: run_step={RUN}
+XRO123 ro123_out VDD VSS RO7 params: run_step={RUN}
+XRO124 ro124_out VDD VSS RO7 params: run_step={RUN}
+XRO125 ro125_out VDD VSS RO7 params: run_step={RUN}
+XRO126 ro126_out VDD VSS RO7 params: run_step={RUN}
+XRO127 ro127_out VDD VSS RO7 params: run_step={RUN}
+
+* Explicitly save every top-level output for the pilot run.
+.save V(ro0_out) V(ro1_out) V(ro2_out) V(ro3_out) V(ro4_out) V(ro5_out) V(ro6_out) V(ro7_out)
++ V(ro8_out) V(ro9_out) V(ro10_out) V(ro11_out) V(ro12_out) V(ro13_out) V(ro14_out) V(ro15_out)
++ V(ro16_out) V(ro17_out) V(ro18_out) V(ro19_out) V(ro20_out) V(ro21_out) V(ro22_out) V(ro23_out)
++ V(ro24_out) V(ro25_out) V(ro26_out) V(ro27_out) V(ro28_out) V(ro29_out) V(ro30_out) V(ro31_out)
++ V(ro32_out) V(ro33_out) V(ro34_out) V(ro35_out) V(ro36_out) V(ro37_out) V(ro38_out) V(ro39_out)
++ V(ro40_out) V(ro41_out) V(ro42_out) V(ro43_out) V(ro44_out) V(ro45_out) V(ro46_out) V(ro47_out)
++ V(ro48_out) V(ro49_out) V(ro50_out) V(ro51_out) V(ro52_out) V(ro53_out) V(ro54_out) V(ro55_out)
++ V(ro56_out) V(ro57_out) V(ro58_out) V(ro59_out) V(ro60_out) V(ro61_out) V(ro62_out) V(ro63_out)
++ V(ro64_out) V(ro65_out) V(ro66_out) V(ro67_out) V(ro68_out) V(ro69_out) V(ro70_out) V(ro71_out)
++ V(ro72_out) V(ro73_out) V(ro74_out) V(ro75_out) V(ro76_out) V(ro77_out) V(ro78_out) V(ro79_out)
++ V(ro80_out) V(ro81_out) V(ro82_out) V(ro83_out) V(ro84_out) V(ro85_out) V(ro86_out) V(ro87_out)
++ V(ro88_out) V(ro89_out) V(ro90_out) V(ro91_out) V(ro92_out) V(ro93_out) V(ro94_out) V(ro95_out)
++ V(ro96_out) V(ro97_out) V(ro98_out) V(ro99_out) V(ro100_out) V(ro101_out) V(ro102_out) V(ro103_out)
++ V(ro104_out) V(ro105_out) V(ro106_out) V(ro107_out) V(ro108_out) V(ro109_out) V(ro110_out) V(ro111_out)
++ V(ro112_out) V(ro113_out) V(ro114_out) V(ro115_out) V(ro116_out) V(ro117_out) V(ro118_out) V(ro119_out)
++ V(ro120_out) V(ro121_out) V(ro122_out) V(ro123_out) V(ro124_out) V(ro125_out) V(ro126_out) V(ro127_out)
+
+* Apply equivalent initial conditions to every output.
+.ic V(ro0_out)=0 V(ro1_out)=0 V(ro2_out)=0 V(ro3_out)=0 V(ro4_out)=0 V(ro5_out)=0 V(ro6_out)=0 V(ro7_out)=0
++ V(ro8_out)=0 V(ro9_out)=0 V(ro10_out)=0 V(ro11_out)=0 V(ro12_out)=0 V(ro13_out)=0 V(ro14_out)=0 V(ro15_out)=0
++ V(ro16_out)=0 V(ro17_out)=0 V(ro18_out)=0 V(ro19_out)=0 V(ro20_out)=0 V(ro21_out)=0 V(ro22_out)=0 V(ro23_out)=0
++ V(ro24_out)=0 V(ro25_out)=0 V(ro26_out)=0 V(ro27_out)=0 V(ro28_out)=0 V(ro29_out)=0 V(ro30_out)=0 V(ro31_out)=0
++ V(ro32_out)=0 V(ro33_out)=0 V(ro34_out)=0 V(ro35_out)=0 V(ro36_out)=0 V(ro37_out)=0 V(ro38_out)=0 V(ro39_out)=0
++ V(ro40_out)=0 V(ro41_out)=0 V(ro42_out)=0 V(ro43_out)=0 V(ro44_out)=0 V(ro45_out)=0 V(ro46_out)=0 V(ro47_out)=0
++ V(ro48_out)=0 V(ro49_out)=0 V(ro50_out)=0 V(ro51_out)=0 V(ro52_out)=0 V(ro53_out)=0 V(ro54_out)=0 V(ro55_out)=0
++ V(ro56_out)=0 V(ro57_out)=0 V(ro58_out)=0 V(ro59_out)=0 V(ro60_out)=0 V(ro61_out)=0 V(ro62_out)=0 V(ro63_out)=0
++ V(ro64_out)=0 V(ro65_out)=0 V(ro66_out)=0 V(ro67_out)=0 V(ro68_out)=0 V(ro69_out)=0 V(ro70_out)=0 V(ro71_out)=0
++ V(ro72_out)=0 V(ro73_out)=0 V(ro74_out)=0 V(ro75_out)=0 V(ro76_out)=0 V(ro77_out)=0 V(ro78_out)=0 V(ro79_out)=0
++ V(ro80_out)=0 V(ro81_out)=0 V(ro82_out)=0 V(ro83_out)=0 V(ro84_out)=0 V(ro85_out)=0 V(ro86_out)=0 V(ro87_out)=0
++ V(ro88_out)=0 V(ro89_out)=0 V(ro90_out)=0 V(ro91_out)=0 V(ro92_out)=0 V(ro93_out)=0 V(ro94_out)=0 V(ro95_out)=0
++ V(ro96_out)=0 V(ro97_out)=0 V(ro98_out)=0 V(ro99_out)=0 V(ro100_out)=0 V(ro101_out)=0 V(ro102_out)=0 V(ro103_out)=0
++ V(ro104_out)=0 V(ro105_out)=0 V(ro106_out)=0 V(ro107_out)=0 V(ro108_out)=0 V(ro109_out)=0 V(ro110_out)=0 V(ro111_out)=0
++ V(ro112_out)=0 V(ro113_out)=0 V(ro114_out)=0 V(ro115_out)=0 V(ro116_out)=0 V(ro117_out)=0 V(ro118_out)=0 V(ro119_out)=0
++ V(ro120_out)=0 V(ro121_out)=0 V(ro122_out)=0 V(ro123_out)=0 V(ro124_out)=0 V(ro125_out)=0 V(ro126_out)=0 V(ro127_out)=0
+
+.temp 25
+.step param RUN 1 100 1
+.tran 0 {TSTOP} 0 {MAXSTEP} uic
+
+* Measure 80 cycles from rising edge 20 to rising edge 100.
+* The 32-RO pilot reached edge 100 before 10 ns; TSTOP=25 ns provides margin.
+* After the first 128-RO run, confirm every edge100_ro* value is below TSTOP.
+.meas tran t_ro0 TRIG V(ro0_out) VAL={VTHRESH} RISE=20 TARG V(ro0_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro1 TRIG V(ro1_out) VAL={VTHRESH} RISE=20 TARG V(ro1_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro2 TRIG V(ro2_out) VAL={VTHRESH} RISE=20 TARG V(ro2_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro3 TRIG V(ro3_out) VAL={VTHRESH} RISE=20 TARG V(ro3_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro4 TRIG V(ro4_out) VAL={VTHRESH} RISE=20 TARG V(ro4_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro5 TRIG V(ro5_out) VAL={VTHRESH} RISE=20 TARG V(ro5_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro6 TRIG V(ro6_out) VAL={VTHRESH} RISE=20 TARG V(ro6_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro7 TRIG V(ro7_out) VAL={VTHRESH} RISE=20 TARG V(ro7_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro8 TRIG V(ro8_out) VAL={VTHRESH} RISE=20 TARG V(ro8_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro9 TRIG V(ro9_out) VAL={VTHRESH} RISE=20 TARG V(ro9_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro10 TRIG V(ro10_out) VAL={VTHRESH} RISE=20 TARG V(ro10_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro11 TRIG V(ro11_out) VAL={VTHRESH} RISE=20 TARG V(ro11_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro12 TRIG V(ro12_out) VAL={VTHRESH} RISE=20 TARG V(ro12_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro13 TRIG V(ro13_out) VAL={VTHRESH} RISE=20 TARG V(ro13_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro14 TRIG V(ro14_out) VAL={VTHRESH} RISE=20 TARG V(ro14_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro15 TRIG V(ro15_out) VAL={VTHRESH} RISE=20 TARG V(ro15_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro16 TRIG V(ro16_out) VAL={VTHRESH} RISE=20 TARG V(ro16_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro17 TRIG V(ro17_out) VAL={VTHRESH} RISE=20 TARG V(ro17_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro18 TRIG V(ro18_out) VAL={VTHRESH} RISE=20 TARG V(ro18_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro19 TRIG V(ro19_out) VAL={VTHRESH} RISE=20 TARG V(ro19_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro20 TRIG V(ro20_out) VAL={VTHRESH} RISE=20 TARG V(ro20_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro21 TRIG V(ro21_out) VAL={VTHRESH} RISE=20 TARG V(ro21_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro22 TRIG V(ro22_out) VAL={VTHRESH} RISE=20 TARG V(ro22_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro23 TRIG V(ro23_out) VAL={VTHRESH} RISE=20 TARG V(ro23_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro24 TRIG V(ro24_out) VAL={VTHRESH} RISE=20 TARG V(ro24_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro25 TRIG V(ro25_out) VAL={VTHRESH} RISE=20 TARG V(ro25_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro26 TRIG V(ro26_out) VAL={VTHRESH} RISE=20 TARG V(ro26_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro27 TRIG V(ro27_out) VAL={VTHRESH} RISE=20 TARG V(ro27_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro28 TRIG V(ro28_out) VAL={VTHRESH} RISE=20 TARG V(ro28_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro29 TRIG V(ro29_out) VAL={VTHRESH} RISE=20 TARG V(ro29_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro30 TRIG V(ro30_out) VAL={VTHRESH} RISE=20 TARG V(ro30_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro31 TRIG V(ro31_out) VAL={VTHRESH} RISE=20 TARG V(ro31_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro32 TRIG V(ro32_out) VAL={VTHRESH} RISE=20 TARG V(ro32_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro33 TRIG V(ro33_out) VAL={VTHRESH} RISE=20 TARG V(ro33_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro34 TRIG V(ro34_out) VAL={VTHRESH} RISE=20 TARG V(ro34_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro35 TRIG V(ro35_out) VAL={VTHRESH} RISE=20 TARG V(ro35_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro36 TRIG V(ro36_out) VAL={VTHRESH} RISE=20 TARG V(ro36_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro37 TRIG V(ro37_out) VAL={VTHRESH} RISE=20 TARG V(ro37_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro38 TRIG V(ro38_out) VAL={VTHRESH} RISE=20 TARG V(ro38_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro39 TRIG V(ro39_out) VAL={VTHRESH} RISE=20 TARG V(ro39_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro40 TRIG V(ro40_out) VAL={VTHRESH} RISE=20 TARG V(ro40_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro41 TRIG V(ro41_out) VAL={VTHRESH} RISE=20 TARG V(ro41_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro42 TRIG V(ro42_out) VAL={VTHRESH} RISE=20 TARG V(ro42_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro43 TRIG V(ro43_out) VAL={VTHRESH} RISE=20 TARG V(ro43_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro44 TRIG V(ro44_out) VAL={VTHRESH} RISE=20 TARG V(ro44_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro45 TRIG V(ro45_out) VAL={VTHRESH} RISE=20 TARG V(ro45_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro46 TRIG V(ro46_out) VAL={VTHRESH} RISE=20 TARG V(ro46_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro47 TRIG V(ro47_out) VAL={VTHRESH} RISE=20 TARG V(ro47_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro48 TRIG V(ro48_out) VAL={VTHRESH} RISE=20 TARG V(ro48_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro49 TRIG V(ro49_out) VAL={VTHRESH} RISE=20 TARG V(ro49_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro50 TRIG V(ro50_out) VAL={VTHRESH} RISE=20 TARG V(ro50_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro51 TRIG V(ro51_out) VAL={VTHRESH} RISE=20 TARG V(ro51_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro52 TRIG V(ro52_out) VAL={VTHRESH} RISE=20 TARG V(ro52_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro53 TRIG V(ro53_out) VAL={VTHRESH} RISE=20 TARG V(ro53_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro54 TRIG V(ro54_out) VAL={VTHRESH} RISE=20 TARG V(ro54_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro55 TRIG V(ro55_out) VAL={VTHRESH} RISE=20 TARG V(ro55_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro56 TRIG V(ro56_out) VAL={VTHRESH} RISE=20 TARG V(ro56_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro57 TRIG V(ro57_out) VAL={VTHRESH} RISE=20 TARG V(ro57_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro58 TRIG V(ro58_out) VAL={VTHRESH} RISE=20 TARG V(ro58_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro59 TRIG V(ro59_out) VAL={VTHRESH} RISE=20 TARG V(ro59_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro60 TRIG V(ro60_out) VAL={VTHRESH} RISE=20 TARG V(ro60_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro61 TRIG V(ro61_out) VAL={VTHRESH} RISE=20 TARG V(ro61_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro62 TRIG V(ro62_out) VAL={VTHRESH} RISE=20 TARG V(ro62_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro63 TRIG V(ro63_out) VAL={VTHRESH} RISE=20 TARG V(ro63_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro64 TRIG V(ro64_out) VAL={VTHRESH} RISE=20 TARG V(ro64_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro65 TRIG V(ro65_out) VAL={VTHRESH} RISE=20 TARG V(ro65_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro66 TRIG V(ro66_out) VAL={VTHRESH} RISE=20 TARG V(ro66_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro67 TRIG V(ro67_out) VAL={VTHRESH} RISE=20 TARG V(ro67_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro68 TRIG V(ro68_out) VAL={VTHRESH} RISE=20 TARG V(ro68_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro69 TRIG V(ro69_out) VAL={VTHRESH} RISE=20 TARG V(ro69_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro70 TRIG V(ro70_out) VAL={VTHRESH} RISE=20 TARG V(ro70_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro71 TRIG V(ro71_out) VAL={VTHRESH} RISE=20 TARG V(ro71_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro72 TRIG V(ro72_out) VAL={VTHRESH} RISE=20 TARG V(ro72_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro73 TRIG V(ro73_out) VAL={VTHRESH} RISE=20 TARG V(ro73_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro74 TRIG V(ro74_out) VAL={VTHRESH} RISE=20 TARG V(ro74_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro75 TRIG V(ro75_out) VAL={VTHRESH} RISE=20 TARG V(ro75_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro76 TRIG V(ro76_out) VAL={VTHRESH} RISE=20 TARG V(ro76_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro77 TRIG V(ro77_out) VAL={VTHRESH} RISE=20 TARG V(ro77_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro78 TRIG V(ro78_out) VAL={VTHRESH} RISE=20 TARG V(ro78_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro79 TRIG V(ro79_out) VAL={VTHRESH} RISE=20 TARG V(ro79_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro80 TRIG V(ro80_out) VAL={VTHRESH} RISE=20 TARG V(ro80_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro81 TRIG V(ro81_out) VAL={VTHRESH} RISE=20 TARG V(ro81_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro82 TRIG V(ro82_out) VAL={VTHRESH} RISE=20 TARG V(ro82_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro83 TRIG V(ro83_out) VAL={VTHRESH} RISE=20 TARG V(ro83_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro84 TRIG V(ro84_out) VAL={VTHRESH} RISE=20 TARG V(ro84_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro85 TRIG V(ro85_out) VAL={VTHRESH} RISE=20 TARG V(ro85_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro86 TRIG V(ro86_out) VAL={VTHRESH} RISE=20 TARG V(ro86_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro87 TRIG V(ro87_out) VAL={VTHRESH} RISE=20 TARG V(ro87_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro88 TRIG V(ro88_out) VAL={VTHRESH} RISE=20 TARG V(ro88_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro89 TRIG V(ro89_out) VAL={VTHRESH} RISE=20 TARG V(ro89_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro90 TRIG V(ro90_out) VAL={VTHRESH} RISE=20 TARG V(ro90_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro91 TRIG V(ro91_out) VAL={VTHRESH} RISE=20 TARG V(ro91_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro92 TRIG V(ro92_out) VAL={VTHRESH} RISE=20 TARG V(ro92_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro93 TRIG V(ro93_out) VAL={VTHRESH} RISE=20 TARG V(ro93_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro94 TRIG V(ro94_out) VAL={VTHRESH} RISE=20 TARG V(ro94_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro95 TRIG V(ro95_out) VAL={VTHRESH} RISE=20 TARG V(ro95_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro96 TRIG V(ro96_out) VAL={VTHRESH} RISE=20 TARG V(ro96_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro97 TRIG V(ro97_out) VAL={VTHRESH} RISE=20 TARG V(ro97_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro98 TRIG V(ro98_out) VAL={VTHRESH} RISE=20 TARG V(ro98_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro99 TRIG V(ro99_out) VAL={VTHRESH} RISE=20 TARG V(ro99_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro100 TRIG V(ro100_out) VAL={VTHRESH} RISE=20 TARG V(ro100_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro101 TRIG V(ro101_out) VAL={VTHRESH} RISE=20 TARG V(ro101_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro102 TRIG V(ro102_out) VAL={VTHRESH} RISE=20 TARG V(ro102_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro103 TRIG V(ro103_out) VAL={VTHRESH} RISE=20 TARG V(ro103_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro104 TRIG V(ro104_out) VAL={VTHRESH} RISE=20 TARG V(ro104_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro105 TRIG V(ro105_out) VAL={VTHRESH} RISE=20 TARG V(ro105_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro106 TRIG V(ro106_out) VAL={VTHRESH} RISE=20 TARG V(ro106_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro107 TRIG V(ro107_out) VAL={VTHRESH} RISE=20 TARG V(ro107_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro108 TRIG V(ro108_out) VAL={VTHRESH} RISE=20 TARG V(ro108_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro109 TRIG V(ro109_out) VAL={VTHRESH} RISE=20 TARG V(ro109_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro110 TRIG V(ro110_out) VAL={VTHRESH} RISE=20 TARG V(ro110_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro111 TRIG V(ro111_out) VAL={VTHRESH} RISE=20 TARG V(ro111_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro112 TRIG V(ro112_out) VAL={VTHRESH} RISE=20 TARG V(ro112_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro113 TRIG V(ro113_out) VAL={VTHRESH} RISE=20 TARG V(ro113_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro114 TRIG V(ro114_out) VAL={VTHRESH} RISE=20 TARG V(ro114_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro115 TRIG V(ro115_out) VAL={VTHRESH} RISE=20 TARG V(ro115_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro116 TRIG V(ro116_out) VAL={VTHRESH} RISE=20 TARG V(ro116_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro117 TRIG V(ro117_out) VAL={VTHRESH} RISE=20 TARG V(ro117_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro118 TRIG V(ro118_out) VAL={VTHRESH} RISE=20 TARG V(ro118_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro119 TRIG V(ro119_out) VAL={VTHRESH} RISE=20 TARG V(ro119_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro120 TRIG V(ro120_out) VAL={VTHRESH} RISE=20 TARG V(ro120_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro121 TRIG V(ro121_out) VAL={VTHRESH} RISE=20 TARG V(ro121_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro122 TRIG V(ro122_out) VAL={VTHRESH} RISE=20 TARG V(ro122_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro123 TRIG V(ro123_out) VAL={VTHRESH} RISE=20 TARG V(ro123_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro124 TRIG V(ro124_out) VAL={VTHRESH} RISE=20 TARG V(ro124_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro125 TRIG V(ro125_out) VAL={VTHRESH} RISE=20 TARG V(ro125_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro126 TRIG V(ro126_out) VAL={VTHRESH} RISE=20 TARG V(ro126_out) VAL={VTHRESH} RISE=100
+.meas tran t_ro127 TRIG V(ro127_out) VAL={VTHRESH} RISE=20 TARG V(ro127_out) VAL={VTHRESH} RISE=100
+.meas tran freq_ro0 PARAM {80/t_ro0}
+.meas tran freq_ro1 PARAM {80/t_ro1}
+.meas tran freq_ro2 PARAM {80/t_ro2}
+.meas tran freq_ro3 PARAM {80/t_ro3}
+.meas tran freq_ro4 PARAM {80/t_ro4}
+.meas tran freq_ro5 PARAM {80/t_ro5}
+.meas tran freq_ro6 PARAM {80/t_ro6}
+.meas tran freq_ro7 PARAM {80/t_ro7}
+.meas tran freq_ro8 PARAM {80/t_ro8}
+.meas tran freq_ro9 PARAM {80/t_ro9}
+.meas tran freq_ro10 PARAM {80/t_ro10}
+.meas tran freq_ro11 PARAM {80/t_ro11}
+.meas tran freq_ro12 PARAM {80/t_ro12}
+.meas tran freq_ro13 PARAM {80/t_ro13}
+.meas tran freq_ro14 PARAM {80/t_ro14}
+.meas tran freq_ro15 PARAM {80/t_ro15}
+.meas tran freq_ro16 PARAM {80/t_ro16}
+.meas tran freq_ro17 PARAM {80/t_ro17}
+.meas tran freq_ro18 PARAM {80/t_ro18}
+.meas tran freq_ro19 PARAM {80/t_ro19}
+.meas tran freq_ro20 PARAM {80/t_ro20}
+.meas tran freq_ro21 PARAM {80/t_ro21}
+.meas tran freq_ro22 PARAM {80/t_ro22}
+.meas tran freq_ro23 PARAM {80/t_ro23}
+.meas tran freq_ro24 PARAM {80/t_ro24}
+.meas tran freq_ro25 PARAM {80/t_ro25}
+.meas tran freq_ro26 PARAM {80/t_ro26}
+.meas tran freq_ro27 PARAM {80/t_ro27}
+.meas tran freq_ro28 PARAM {80/t_ro28}
+.meas tran freq_ro29 PARAM {80/t_ro29}
+.meas tran freq_ro30 PARAM {80/t_ro30}
+.meas tran freq_ro31 PARAM {80/t_ro31}
+.meas tran freq_ro32 PARAM {80/t_ro32}
+.meas tran freq_ro33 PARAM {80/t_ro33}
+.meas tran freq_ro34 PARAM {80/t_ro34}
+.meas tran freq_ro35 PARAM {80/t_ro35}
+.meas tran freq_ro36 PARAM {80/t_ro36}
+.meas tran freq_ro37 PARAM {80/t_ro37}
+.meas tran freq_ro38 PARAM {80/t_ro38}
+.meas tran freq_ro39 PARAM {80/t_ro39}
+.meas tran freq_ro40 PARAM {80/t_ro40}
+.meas tran freq_ro41 PARAM {80/t_ro41}
+.meas tran freq_ro42 PARAM {80/t_ro42}
+.meas tran freq_ro43 PARAM {80/t_ro43}
+.meas tran freq_ro44 PARAM {80/t_ro44}
+.meas tran freq_ro45 PARAM {80/t_ro45}
+.meas tran freq_ro46 PARAM {80/t_ro46}
+.meas tran freq_ro47 PARAM {80/t_ro47}
+.meas tran freq_ro48 PARAM {80/t_ro48}
+.meas tran freq_ro49 PARAM {80/t_ro49}
+.meas tran freq_ro50 PARAM {80/t_ro50}
+.meas tran freq_ro51 PARAM {80/t_ro51}
+.meas tran freq_ro52 PARAM {80/t_ro52}
+.meas tran freq_ro53 PARAM {80/t_ro53}
+.meas tran freq_ro54 PARAM {80/t_ro54}
+.meas tran freq_ro55 PARAM {80/t_ro55}
+.meas tran freq_ro56 PARAM {80/t_ro56}
+.meas tran freq_ro57 PARAM {80/t_ro57}
+.meas tran freq_ro58 PARAM {80/t_ro58}
+.meas tran freq_ro59 PARAM {80/t_ro59}
+.meas tran freq_ro60 PARAM {80/t_ro60}
+.meas tran freq_ro61 PARAM {80/t_ro61}
+.meas tran freq_ro62 PARAM {80/t_ro62}
+.meas tran freq_ro63 PARAM {80/t_ro63}
+.meas tran freq_ro64 PARAM {80/t_ro64}
+.meas tran freq_ro65 PARAM {80/t_ro65}
+.meas tran freq_ro66 PARAM {80/t_ro66}
+.meas tran freq_ro67 PARAM {80/t_ro67}
+.meas tran freq_ro68 PARAM {80/t_ro68}
+.meas tran freq_ro69 PARAM {80/t_ro69}
+.meas tran freq_ro70 PARAM {80/t_ro70}
+.meas tran freq_ro71 PARAM {80/t_ro71}
+.meas tran freq_ro72 PARAM {80/t_ro72}
+.meas tran freq_ro73 PARAM {80/t_ro73}
+.meas tran freq_ro74 PARAM {80/t_ro74}
+.meas tran freq_ro75 PARAM {80/t_ro75}
+.meas tran freq_ro76 PARAM {80/t_ro76}
+.meas tran freq_ro77 PARAM {80/t_ro77}
+.meas tran freq_ro78 PARAM {80/t_ro78}
+.meas tran freq_ro79 PARAM {80/t_ro79}
+.meas tran freq_ro80 PARAM {80/t_ro80}
+.meas tran freq_ro81 PARAM {80/t_ro81}
+.meas tran freq_ro82 PARAM {80/t_ro82}
+.meas tran freq_ro83 PARAM {80/t_ro83}
+.meas tran freq_ro84 PARAM {80/t_ro84}
+.meas tran freq_ro85 PARAM {80/t_ro85}
+.meas tran freq_ro86 PARAM {80/t_ro86}
+.meas tran freq_ro87 PARAM {80/t_ro87}
+.meas tran freq_ro88 PARAM {80/t_ro88}
+.meas tran freq_ro89 PARAM {80/t_ro89}
+.meas tran freq_ro90 PARAM {80/t_ro90}
+.meas tran freq_ro91 PARAM {80/t_ro91}
+.meas tran freq_ro92 PARAM {80/t_ro92}
+.meas tran freq_ro93 PARAM {80/t_ro93}
+.meas tran freq_ro94 PARAM {80/t_ro94}
+.meas tran freq_ro95 PARAM {80/t_ro95}
+.meas tran freq_ro96 PARAM {80/t_ro96}
+.meas tran freq_ro97 PARAM {80/t_ro97}
+.meas tran freq_ro98 PARAM {80/t_ro98}
+.meas tran freq_ro99 PARAM {80/t_ro99}
+.meas tran freq_ro100 PARAM {80/t_ro100}
+.meas tran freq_ro101 PARAM {80/t_ro101}
+.meas tran freq_ro102 PARAM {80/t_ro102}
+.meas tran freq_ro103 PARAM {80/t_ro103}
+.meas tran freq_ro104 PARAM {80/t_ro104}
+.meas tran freq_ro105 PARAM {80/t_ro105}
+.meas tran freq_ro106 PARAM {80/t_ro106}
+.meas tran freq_ro107 PARAM {80/t_ro107}
+.meas tran freq_ro108 PARAM {80/t_ro108}
+.meas tran freq_ro109 PARAM {80/t_ro109}
+.meas tran freq_ro110 PARAM {80/t_ro110}
+.meas tran freq_ro111 PARAM {80/t_ro111}
+.meas tran freq_ro112 PARAM {80/t_ro112}
+.meas tran freq_ro113 PARAM {80/t_ro113}
+.meas tran freq_ro114 PARAM {80/t_ro114}
+.meas tran freq_ro115 PARAM {80/t_ro115}
+.meas tran freq_ro116 PARAM {80/t_ro116}
+.meas tran freq_ro117 PARAM {80/t_ro117}
+.meas tran freq_ro118 PARAM {80/t_ro118}
+.meas tran freq_ro119 PARAM {80/t_ro119}
+.meas tran freq_ro120 PARAM {80/t_ro120}
+.meas tran freq_ro121 PARAM {80/t_ro121}
+.meas tran freq_ro122 PARAM {80/t_ro122}
+.meas tran freq_ro123 PARAM {80/t_ro123}
+.meas tran freq_ro124 PARAM {80/t_ro124}
+.meas tran freq_ro125 PARAM {80/t_ro125}
+.meas tran freq_ro126 PARAM {80/t_ro126}
+.meas tran freq_ro127 PARAM {80/t_ro127}
+
+* Pilot diagnostics: time of the 100th rising edge.
+.meas tran edge100_ro0 WHEN V(ro0_out)={VTHRESH} RISE=100
+.meas tran edge100_ro1 WHEN V(ro1_out)={VTHRESH} RISE=100
+.meas tran edge100_ro2 WHEN V(ro2_out)={VTHRESH} RISE=100
+.meas tran edge100_ro3 WHEN V(ro3_out)={VTHRESH} RISE=100
+.meas tran edge100_ro4 WHEN V(ro4_out)={VTHRESH} RISE=100
+.meas tran edge100_ro5 WHEN V(ro5_out)={VTHRESH} RISE=100
+.meas tran edge100_ro6 WHEN V(ro6_out)={VTHRESH} RISE=100
+.meas tran edge100_ro7 WHEN V(ro7_out)={VTHRESH} RISE=100
+.meas tran edge100_ro8 WHEN V(ro8_out)={VTHRESH} RISE=100
+.meas tran edge100_ro9 WHEN V(ro9_out)={VTHRESH} RISE=100
+.meas tran edge100_ro10 WHEN V(ro10_out)={VTHRESH} RISE=100
+.meas tran edge100_ro11 WHEN V(ro11_out)={VTHRESH} RISE=100
+.meas tran edge100_ro12 WHEN V(ro12_out)={VTHRESH} RISE=100
+.meas tran edge100_ro13 WHEN V(ro13_out)={VTHRESH} RISE=100
+.meas tran edge100_ro14 WHEN V(ro14_out)={VTHRESH} RISE=100
+.meas tran edge100_ro15 WHEN V(ro15_out)={VTHRESH} RISE=100
+.meas tran edge100_ro16 WHEN V(ro16_out)={VTHRESH} RISE=100
+.meas tran edge100_ro17 WHEN V(ro17_out)={VTHRESH} RISE=100
+.meas tran edge100_ro18 WHEN V(ro18_out)={VTHRESH} RISE=100
+.meas tran edge100_ro19 WHEN V(ro19_out)={VTHRESH} RISE=100
+.meas tran edge100_ro20 WHEN V(ro20_out)={VTHRESH} RISE=100
+.meas tran edge100_ro21 WHEN V(ro21_out)={VTHRESH} RISE=100
+.meas tran edge100_ro22 WHEN V(ro22_out)={VTHRESH} RISE=100
+.meas tran edge100_ro23 WHEN V(ro23_out)={VTHRESH} RISE=100
+.meas tran edge100_ro24 WHEN V(ro24_out)={VTHRESH} RISE=100
+.meas tran edge100_ro25 WHEN V(ro25_out)={VTHRESH} RISE=100
+.meas tran edge100_ro26 WHEN V(ro26_out)={VTHRESH} RISE=100
+.meas tran edge100_ro27 WHEN V(ro27_out)={VTHRESH} RISE=100
+.meas tran edge100_ro28 WHEN V(ro28_out)={VTHRESH} RISE=100
+.meas tran edge100_ro29 WHEN V(ro29_out)={VTHRESH} RISE=100
+.meas tran edge100_ro30 WHEN V(ro30_out)={VTHRESH} RISE=100
+.meas tran edge100_ro31 WHEN V(ro31_out)={VTHRESH} RISE=100
+.meas tran edge100_ro32 WHEN V(ro32_out)={VTHRESH} RISE=100
+.meas tran edge100_ro33 WHEN V(ro33_out)={VTHRESH} RISE=100
+.meas tran edge100_ro34 WHEN V(ro34_out)={VTHRESH} RISE=100
+.meas tran edge100_ro35 WHEN V(ro35_out)={VTHRESH} RISE=100
+.meas tran edge100_ro36 WHEN V(ro36_out)={VTHRESH} RISE=100
+.meas tran edge100_ro37 WHEN V(ro37_out)={VTHRESH} RISE=100
+.meas tran edge100_ro38 WHEN V(ro38_out)={VTHRESH} RISE=100
+.meas tran edge100_ro39 WHEN V(ro39_out)={VTHRESH} RISE=100
+.meas tran edge100_ro40 WHEN V(ro40_out)={VTHRESH} RISE=100
+.meas tran edge100_ro41 WHEN V(ro41_out)={VTHRESH} RISE=100
+.meas tran edge100_ro42 WHEN V(ro42_out)={VTHRESH} RISE=100
+.meas tran edge100_ro43 WHEN V(ro43_out)={VTHRESH} RISE=100
+.meas tran edge100_ro44 WHEN V(ro44_out)={VTHRESH} RISE=100
+.meas tran edge100_ro45 WHEN V(ro45_out)={VTHRESH} RISE=100
+.meas tran edge100_ro46 WHEN V(ro46_out)={VTHRESH} RISE=100
+.meas tran edge100_ro47 WHEN V(ro47_out)={VTHRESH} RISE=100
+.meas tran edge100_ro48 WHEN V(ro48_out)={VTHRESH} RISE=100
+.meas tran edge100_ro49 WHEN V(ro49_out)={VTHRESH} RISE=100
+.meas tran edge100_ro50 WHEN V(ro50_out)={VTHRESH} RISE=100
+.meas tran edge100_ro51 WHEN V(ro51_out)={VTHRESH} RISE=100
+.meas tran edge100_ro52 WHEN V(ro52_out)={VTHRESH} RISE=100
+.meas tran edge100_ro53 WHEN V(ro53_out)={VTHRESH} RISE=100
+.meas tran edge100_ro54 WHEN V(ro54_out)={VTHRESH} RISE=100
+.meas tran edge100_ro55 WHEN V(ro55_out)={VTHRESH} RISE=100
+.meas tran edge100_ro56 WHEN V(ro56_out)={VTHRESH} RISE=100
+.meas tran edge100_ro57 WHEN V(ro57_out)={VTHRESH} RISE=100
+.meas tran edge100_ro58 WHEN V(ro58_out)={VTHRESH} RISE=100
+.meas tran edge100_ro59 WHEN V(ro59_out)={VTHRESH} RISE=100
+.meas tran edge100_ro60 WHEN V(ro60_out)={VTHRESH} RISE=100
+.meas tran edge100_ro61 WHEN V(ro61_out)={VTHRESH} RISE=100
+.meas tran edge100_ro62 WHEN V(ro62_out)={VTHRESH} RISE=100
+.meas tran edge100_ro63 WHEN V(ro63_out)={VTHRESH} RISE=100
+.meas tran edge100_ro64 WHEN V(ro64_out)={VTHRESH} RISE=100
+.meas tran edge100_ro65 WHEN V(ro65_out)={VTHRESH} RISE=100
+.meas tran edge100_ro66 WHEN V(ro66_out)={VTHRESH} RISE=100
+.meas tran edge100_ro67 WHEN V(ro67_out)={VTHRESH} RISE=100
+.meas tran edge100_ro68 WHEN V(ro68_out)={VTHRESH} RISE=100
+.meas tran edge100_ro69 WHEN V(ro69_out)={VTHRESH} RISE=100
+.meas tran edge100_ro70 WHEN V(ro70_out)={VTHRESH} RISE=100
+.meas tran edge100_ro71 WHEN V(ro71_out)={VTHRESH} RISE=100
+.meas tran edge100_ro72 WHEN V(ro72_out)={VTHRESH} RISE=100
+.meas tran edge100_ro73 WHEN V(ro73_out)={VTHRESH} RISE=100
+.meas tran edge100_ro74 WHEN V(ro74_out)={VTHRESH} RISE=100
+.meas tran edge100_ro75 WHEN V(ro75_out)={VTHRESH} RISE=100
+.meas tran edge100_ro76 WHEN V(ro76_out)={VTHRESH} RISE=100
+.meas tran edge100_ro77 WHEN V(ro77_out)={VTHRESH} RISE=100
+.meas tran edge100_ro78 WHEN V(ro78_out)={VTHRESH} RISE=100
+.meas tran edge100_ro79 WHEN V(ro79_out)={VTHRESH} RISE=100
+.meas tran edge100_ro80 WHEN V(ro80_out)={VTHRESH} RISE=100
+.meas tran edge100_ro81 WHEN V(ro81_out)={VTHRESH} RISE=100
+.meas tran edge100_ro82 WHEN V(ro82_out)={VTHRESH} RISE=100
+.meas tran edge100_ro83 WHEN V(ro83_out)={VTHRESH} RISE=100
+.meas tran edge100_ro84 WHEN V(ro84_out)={VTHRESH} RISE=100
+.meas tran edge100_ro85 WHEN V(ro85_out)={VTHRESH} RISE=100
+.meas tran edge100_ro86 WHEN V(ro86_out)={VTHRESH} RISE=100
+.meas tran edge100_ro87 WHEN V(ro87_out)={VTHRESH} RISE=100
+.meas tran edge100_ro88 WHEN V(ro88_out)={VTHRESH} RISE=100
+.meas tran edge100_ro89 WHEN V(ro89_out)={VTHRESH} RISE=100
+.meas tran edge100_ro90 WHEN V(ro90_out)={VTHRESH} RISE=100
+.meas tran edge100_ro91 WHEN V(ro91_out)={VTHRESH} RISE=100
+.meas tran edge100_ro92 WHEN V(ro92_out)={VTHRESH} RISE=100
+.meas tran edge100_ro93 WHEN V(ro93_out)={VTHRESH} RISE=100
+.meas tran edge100_ro94 WHEN V(ro94_out)={VTHRESH} RISE=100
+.meas tran edge100_ro95 WHEN V(ro95_out)={VTHRESH} RISE=100
+.meas tran edge100_ro96 WHEN V(ro96_out)={VTHRESH} RISE=100
+.meas tran edge100_ro97 WHEN V(ro97_out)={VTHRESH} RISE=100
+.meas tran edge100_ro98 WHEN V(ro98_out)={VTHRESH} RISE=100
+.meas tran edge100_ro99 WHEN V(ro99_out)={VTHRESH} RISE=100
+.meas tran edge100_ro100 WHEN V(ro100_out)={VTHRESH} RISE=100
+.meas tran edge100_ro101 WHEN V(ro101_out)={VTHRESH} RISE=100
+.meas tran edge100_ro102 WHEN V(ro102_out)={VTHRESH} RISE=100
+.meas tran edge100_ro103 WHEN V(ro103_out)={VTHRESH} RISE=100
+.meas tran edge100_ro104 WHEN V(ro104_out)={VTHRESH} RISE=100
+.meas tran edge100_ro105 WHEN V(ro105_out)={VTHRESH} RISE=100
+.meas tran edge100_ro106 WHEN V(ro106_out)={VTHRESH} RISE=100
+.meas tran edge100_ro107 WHEN V(ro107_out)={VTHRESH} RISE=100
+.meas tran edge100_ro108 WHEN V(ro108_out)={VTHRESH} RISE=100
+.meas tran edge100_ro109 WHEN V(ro109_out)={VTHRESH} RISE=100
+.meas tran edge100_ro110 WHEN V(ro110_out)={VTHRESH} RISE=100
+.meas tran edge100_ro111 WHEN V(ro111_out)={VTHRESH} RISE=100
+.meas tran edge100_ro112 WHEN V(ro112_out)={VTHRESH} RISE=100
+.meas tran edge100_ro113 WHEN V(ro113_out)={VTHRESH} RISE=100
+.meas tran edge100_ro114 WHEN V(ro114_out)={VTHRESH} RISE=100
+.meas tran edge100_ro115 WHEN V(ro115_out)={VTHRESH} RISE=100
+.meas tran edge100_ro116 WHEN V(ro116_out)={VTHRESH} RISE=100
+.meas tran edge100_ro117 WHEN V(ro117_out)={VTHRESH} RISE=100
+.meas tran edge100_ro118 WHEN V(ro118_out)={VTHRESH} RISE=100
+.meas tran edge100_ro119 WHEN V(ro119_out)={VTHRESH} RISE=100
+.meas tran edge100_ro120 WHEN V(ro120_out)={VTHRESH} RISE=100
+.meas tran edge100_ro121 WHEN V(ro121_out)={VTHRESH} RISE=100
+.meas tran edge100_ro122 WHEN V(ro122_out)={VTHRESH} RISE=100
+.meas tran edge100_ro123 WHEN V(ro123_out)={VTHRESH} RISE=100
+.meas tran edge100_ro124 WHEN V(ro124_out)={VTHRESH} RISE=100
+.meas tran edge100_ro125 WHEN V(ro125_out)={VTHRESH} RISE=100
+.meas tran edge100_ro126 WHEN V(ro126_out)={VTHRESH} RISE=100
+.meas tran edge100_ro127 WHEN V(ro127_out)={VTHRESH} RISE=100
+
+.end
