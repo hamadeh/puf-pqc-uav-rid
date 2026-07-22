@@ -1,0 +1,40 @@
+UAV Remote ID Tamarin Verification Results
+Generated: 2026-07-22T15:54:01+03:00
+
+================================================
+CORE AUTHENTICATION THEORY
+================================================
+Tamarin core-model verification results
+Generated: 2026-07-22T14:43:20+03:00
+
+  commit_reachable (exists-trace): verified (16 steps)
+  two_distinct_sessions_reachable (exists-trace): verified (30 steps)
+  request_authentication (all-traces): verified (14 steps)
+  replay_request_injective (all-traces): verified (32 steps)
+  authentication_noninjective_agreement (all-traces): verified (212 steps)
+  authentication_injective_agreement (all-traces): verified (244 steps)
+  commit_binds_authorized_leaf_and_index (all-traces): verified (6 steps)
+  session_key_secrecy (all-traces): verified (22 steps)
+  passive_storage_disclosure_preserves_agreement (all-traces): verified (133 steps)
+  active_capture_impersonation_reachable (exists-trace): verified (26 steps)
+
+================================================
+REVOCATION THEORY
+================================================
+Tamarin revocation-model verification results
+Generated: 2026-07-22T15:53:34+03:00
+
+  commit_reachable (exists-trace): verified (4 steps)
+  commit_after_version_refresh_reachable (exists-trace): verified (7 steps)
+  two_commits_across_version_refresh_reachable (exists-trace): verified (8 steps)
+  commit_uses_latest_installed_version (all-traces): verified (1120 steps)
+  no_commit_after_root_revocation (all-traces): verified (398 steps)
+  no_commit_after_verifier_revocation (all-traces): verified (386 steps)
+  no_commit_after_uav_key_revocation (all-traces): verified (386 steps)
+
+================================================
+INTERPRETATION
+================================================
+All selected core and revocation lemmas were verified.
+active_capture_impersonation_reachable is an expected
+negative-control attack trace after active UAV capture.

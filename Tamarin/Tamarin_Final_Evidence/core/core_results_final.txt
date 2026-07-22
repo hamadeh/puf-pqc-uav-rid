@@ -1,0 +1,13 @@
+Tamarin core-model verification results
+Generated: 2026-07-22T14:43:20+03:00
+
+  commit_reachable (exists-trace): verified (16 steps)
+  two_distinct_sessions_reachable (exists-trace): verified (30 steps)
+  request_authentication (all-traces): verified (14 steps)
+  replay_request_injective (all-traces): verified (32 steps)
+  authentication_noninjective_agreement (all-traces): verified (212 steps)
+  authentication_injective_agreement (all-traces): verified (244 steps)
+  commit_binds_authorized_leaf_and_index (all-traces): verified (6 steps)
+  session_key_secrecy (all-traces): verified (22 steps)
+  passive_storage_disclosure_preserves_agreement (all-traces): verified (133 steps)
+  active_capture_impersonation_reachable (exists-trace): verified (26 steps)

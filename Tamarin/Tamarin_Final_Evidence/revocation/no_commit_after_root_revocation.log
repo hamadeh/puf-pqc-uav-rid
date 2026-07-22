@@ -1,0 +1,1686 @@
+maude tool: 'maude'
+ checking version: 3.5.1. OK.
+ checking installation: OK.
+[Theory UAV_RemoteID_Revocation_Simplified_v3] Theory loaded
+[Theory UAV_RemoteID_Revocation_Simplified_v3] Theory translated
+[Theory UAV_RemoteID_Revocation_Simplified_v3] Derivation checks started
+[Theory UAV_RemoteID_Revocation_Simplified_v3] Derivation checks ended
+[Theory UAV_RemoteID_Revocation_Simplified_v3] Theory closed
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
+theory UAV_RemoteID_Revocation_Simplified_v3
+
+begin
+
+// Function signature and definition of the equational theory E
+
+functions: fst/1, pair/2, snd/1
+equations: fst(<x.1, x.2>) = x.1, snd(<x.1, x.2>) = x.2
+
+rule (modulo E) Initialize:
+   [ ]
+  --[ Initialized( 'domain0' ), VersionInstalled( 'domain0', 'v0' ) ]->
+   [
+   CredentialState( 'domain0', 'v0', 'active', 'active', 'active' ),
+   CanRefresh( 'domain0' ), CommitPermit( 'domain0', 'c0' ),
+   CommitPermit( 'domain0', 'c1' )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+restriction UniqueInitialization:
+  "∀ #i #j.
+    ((Initialized( 'domain0' ) @ #i) ∧ (Initialized( 'domain0' ) @ #j)) ⇒
+    (#i = #j)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ #i #j.
+    ((Initialized( 'domain0' ) @ #i) ∧ (Initialized( 'domain0' ) @ #j)) ⇒
+    (#i = #j)"
+  */
+
+rule (modulo E) Refresh_Version:
+   [
+   CredentialState( 'domain0', version, rootStatus, verifierStatus,
+                    keyStatus
+   ),
+   CanRefresh( 'domain0' )
+   ]
+  --[
+  VersionRefreshed( 'domain0', version, 'v1' ),
+  VersionInstalled( 'domain0', 'v1' )
+  ]->
+   [
+   CredentialState( 'domain0', 'v1', rootStatus, verifierStatus, keyStatus )
+   ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Commit:
+   [
+   CredentialState( 'domain0', version, 'active', 'active', 'active' ),
+   CommitPermit( 'domain0', permit )
+   ]
+  --[
+  RevocationChecked( 'domain0', version ),
+  CommitAccepted( 'domain0', version )
+  ]->
+   [ CredentialState( 'domain0', version, 'active', 'active', 'active' ) ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Revoke_Root:
+   [
+   CredentialState( 'domain0', version, 'active', verifierStatus, keyStatus
+   )
+   ]
+  --[
+  RootRevoked( 'domain0', 'v-root-revoked' ),
+  VersionInstalled( 'domain0', 'v-root-revoked' )
+  ]->
+   [
+   CredentialState( 'domain0', 'v-root-revoked', 'revoked', verifierStatus,
+                    keyStatus
+   )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Revoke_Verifier:
+   [ CredentialState( 'domain0', version, rootStatus, 'active', keyStatus )
+   ]
+  --[
+  VerifierRevoked( 'domain0', 'v-verifier-revoked' ),
+  VersionInstalled( 'domain0', 'v-verifier-revoked' )
+  ]->
+   [
+   CredentialState( 'domain0', 'v-verifier-revoked', rootStatus, 'revoked',
+                    keyStatus
+   )
+   ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Revoke_UAV_Key:
+   [
+   CredentialState( 'domain0', version, rootStatus, verifierStatus, 'active'
+   )
+   ]
+  --[
+  UAVKeyRevoked( 'domain0', 'v-uav-key-revoked' ),
+  VersionInstalled( 'domain0', 'v-uav-key-revoked' )
+  ]->
+   [
+   CredentialState( 'domain0', 'v-uav-key-revoked', rootStatus,
+                    verifierStatus, 'revoked'
+   )
+   ]
+
+  // loop breaker: [0]
+  /* has exactly the trivial AC variant */
+
+lemma commit_reachable:
+  exists-trace "∃ version #i. CommitAccepted( 'domain0', version ) @ #i"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ version #i. (CommitAccepted( 'domain0', version ) @ #i)"
+*/
+by sorry
+
+lemma commit_after_version_refresh_reachable:
+  exists-trace
+  "∃ oldVersion #r #i.
+    ((VersionRefreshed( 'domain0', oldVersion, 'v1' ) @ #r) ∧
+     (CommitAccepted( 'domain0', 'v1' ) @ #i)) ∧
+    (#r < #i)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ oldVersion #r #i.
+  (VersionRefreshed( 'domain0', oldVersion, 'v1' ) @ #r) ∧
+  (CommitAccepted( 'domain0', 'v1' ) @ #i)
+ ∧
+  #r < #i"
+*/
+by sorry
+
+lemma two_commits_across_version_refresh_reachable:
+  exists-trace
+  "∃ #c0 #r #c1.
+    ((((CommitAccepted( 'domain0', 'v0' ) @ #c0) ∧
+       (VersionRefreshed( 'domain0', 'v0', 'v1' ) @ #r)) ∧
+      (CommitAccepted( 'domain0', 'v1' ) @ #c1)) ∧
+     (#c0 < #r)) ∧
+    (#r < #c1)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ #c0 #r #c1.
+  (CommitAccepted( 'domain0', 'v0' ) @ #c0) ∧
+  (VersionRefreshed( 'domain0', 'v0', 'v1' ) @ #r) ∧
+  (CommitAccepted( 'domain0', 'v1' ) @ #c1)
+ ∧
+  (#c0 < #r) ∧ (#r < #c1)"
+*/
+by sorry
+
+lemma commit_uses_latest_installed_version:
+  all-traces
+  "∀ version #i.
+    (CommitAccepted( 'domain0', version ) @ #i) ⇒
+    (∃ #v.
+      ((VersionInstalled( 'domain0', version ) @ #v) ∧ (#v < #i)) ∧
+      (¬(∃ newer #n.
+          ((VersionInstalled( 'domain0', newer ) @ #n) ∧ (#v < #n)) ∧ (#n < #i))))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ version #i.
+  (CommitAccepted( 'domain0', version ) @ #i)
+ ∧
+  ∀ #v.
+   (VersionInstalled( 'domain0', version ) @ #v)
+  ⇒
+   ((¬(#v < #i)) ∨
+    (∃ newer #n.
+      (VersionInstalled( 'domain0', newer ) @ #n) ∧ (#v < #n) ∧ (#n < #i)))"
+*/
+by sorry
+
+lemma no_commit_after_root_revocation:
+  all-traces
+  "∀ vnew version #r #i.
+    (((RootRevoked( 'domain0', vnew ) @ #r) ∧
+      (CommitAccepted( 'domain0', version ) @ #i)) ∧
+     (#r < #i)) ⇒
+    (⊥)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ vnew version #r #i.
+  (RootRevoked( 'domain0', vnew ) @ #r) ∧
+  (CommitAccepted( 'domain0', version ) @ #i)
+ ∧
+  #r < #i"
+*/
+simplify
+solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                        keyStatus
+       ) ▶₀ #r )
+  case Commit_case_1
+  solve( CommitPermit( 'domain0', permit ) ▶₁ #i )
+    case Initialize_case_1
+    by contradiction /* cyclic */
+  next
+    case Initialize_case_2
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit
+      by contradiction /* cyclic */
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      qed
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      qed
+    qed
+  qed
+next
+  case Commit_case_2
+  solve( CommitPermit( 'domain0', permit ) ▶₁ #i )
+    case Initialize_case_1
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit
+      by contradiction /* cyclic */
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      qed
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      qed
+    qed
+  next
+    case Initialize_case_2
+    by contradiction /* cyclic */
+  qed
+next
+  case Initialize
+  solve( CommitPermit( 'domain0', permit ) ▶₁ #i )
+    case Initialize_case_1
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      by contradiction /* cyclic */
+    next
+      case Commit_case_2
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr.1 )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      qed
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr.1 )
+        case Commit_case_1
+        by contradiction /* cyclic */
+      next
+        case Commit_case_2
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      qed
+    qed
+  next
+    case Initialize_case_2
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr.1 )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      qed
+    next
+      case Commit_case_2
+      by contradiction /* cyclic */
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+             ) ▶₀ #vr.1 )
+        case Commit_case_1
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      next
+        case Commit_case_2
+        by contradiction /* cyclic */
+      qed
+    qed
+  qed
+next
+  case Refresh_Version
+  solve( CommitPermit( 'domain0', permit ) ▶₁ #i )
+    case Initialize_case_1
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      by contradiction /* cyclic */
+    next
+      case Commit_case_2
+      solve( CredentialState( 'domain0', version.1, 'active', verifierStatus,
+                              keyStatus
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_Verifier
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_UAV_Key
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                              keyStatus
+             ) ▶₀ #vr )
+        case Commit_case_1
+        by contradiction /* cyclic */
+      next
+        case Commit_case_2
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Revoke_Verifier
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Revoke_UAV_Key
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    qed
+  next
+    case Initialize_case_2
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      solve( CredentialState( 'domain0', version.1, 'active', verifierStatus,
+                              keyStatus
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_Verifier
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_UAV_Key
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Commit_case_2
+      by contradiction /* cyclic */
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                              keyStatus
+             ) ▶₀ #vr )
+        case Commit_case_1
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        qed
+      next
+        case Commit_case_2
+        by contradiction /* cyclic */
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Revoke_Verifier
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Revoke_UAV_Key
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      qed
+    qed
+  qed
+next
+  case Revoke_UAV_Key
+  solve( CommitPermit( 'domain0', permit ) ▶₁ #i )
+    case Initialize_case_1
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      by contradiction /* cyclic */
+    next
+      case Commit_case_2
+      solve( CredentialState( 'domain0', version.1, 'active', verifierStatus,
+                              'active'
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_Verifier
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                              'active'
+             ) ▶₀ #vr )
+        case Commit_case_1
+        by contradiction /* cyclic */
+      next
+        case Commit_case_2
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Revoke_Verifier
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                              'active'
+             ) ▶₀ #vr )
+        case Commit_case_1
+        by contradiction /* cyclic */
+      next
+        case Commit_case_2
+        solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    qed
+  next
+    case Initialize_case_2
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      solve( CredentialState( 'domain0', version.1, 'active', verifierStatus,
+                              'active'
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_Verifier
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Commit_case_2
+      by contradiction /* cyclic */
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                              'active'
+             ) ▶₀ #vr )
+        case Commit_case_1
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Commit_case_2
+        by contradiction /* cyclic */
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Revoke_Verifier
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      qed
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', verifierStatus,
+                              'active'
+             ) ▶₀ #vr )
+        case Commit_case_1
+        solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Commit_case_2
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        qed
+      next
+        case Revoke_Verifier
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      qed
+    qed
+  qed
+next
+  case Revoke_Verifier
+  solve( CommitPermit( 'domain0', permit ) ▶₁ #i )
+    case Initialize_case_1
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      by contradiction /* cyclic */
+    next
+      case Commit_case_2
+      solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                              keyStatus
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_UAV_Key
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+             ) ▶₀ #vr )
+        case Commit_case_1
+        by contradiction /* cyclic */
+      next
+        case Commit_case_2
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Revoke_UAV_Key
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+             ) ▶₀ #vr )
+        case Commit_case_1
+        by contradiction /* cyclic */
+      next
+        case Commit_case_2
+        solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          by contradiction /* cyclic */
+        next
+          case Commit_case_2
+          solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            by contradiction /* cyclic */
+          next
+            case Commit_case_2
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    qed
+  next
+    case Initialize_case_2
+    solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+           ) ▶₀ #i )
+      case Commit_case_1
+      solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                              keyStatus
+             ) ▶₀ #vr )
+        case Commit
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Revoke_UAV_Key
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        qed
+      qed
+    next
+      case Commit_case_2
+      by contradiction /* cyclic */
+    next
+      case Initialize
+      solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+             ) ▶₀ #vr )
+        case Commit_case_1
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Commit_case_2
+        by contradiction /* cyclic */
+      next
+        case Refresh_Version
+        solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Revoke_UAV_Key
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Refresh_Version
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Refresh_Version
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      qed
+    next
+      case Refresh_Version
+      solve( CredentialState( 'domain0', version, 'active', 'active', keyStatus
+             ) ▶₀ #vr )
+        case Commit_case_1
+        solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                'active'
+               ) ▶₀ #vr.2 )
+          case Commit
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        qed
+      next
+        case Commit_case_2
+        by contradiction /* cyclic */
+      next
+        case Initialize
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        qed
+      next
+        case Revoke_UAV_Key
+        solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+               ) ▶₀ #vr.2 )
+          case Commit_case_1
+          solve( CredentialState( 'domain0', version.1, 'active', 'active',
+                                  'active'
+                 ) ▶₀ #vr.3 )
+            case Commit
+            by contradiction /* cyclic */
+          next
+            case Initialize
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          qed
+        next
+          case Commit_case_2
+          by contradiction /* cyclic */
+        next
+          case Initialize
+          solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                 ) ▶₀ #vr.3 )
+            case Commit_case_1
+            solve( CredentialState( 'domain0', version, 'active', 'active', 'active'
+                   ) ▶₀ #vr.4 )
+              case Commit
+              by contradiction /* cyclic */
+            qed
+          next
+            case Commit_case_2
+            by contradiction /* cyclic */
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma no_commit_after_verifier_revocation:
+  all-traces
+  "∀ vnew version #r #i.
+    (((VerifierRevoked( 'domain0', vnew ) @ #r) ∧
+      (CommitAccepted( 'domain0', version ) @ #i)) ∧
+     (#r < #i)) ⇒
+    (⊥)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ vnew version #r #i.
+  (VerifierRevoked( 'domain0', vnew ) @ #r) ∧
+  (CommitAccepted( 'domain0', version ) @ #i)
+ ∧
+  #r < #i"
+*/
+by sorry
+
+lemma no_commit_after_uav_key_revocation:
+  all-traces
+  "∀ vnew version #r #i.
+    (((UAVKeyRevoked( 'domain0', vnew ) @ #r) ∧
+      (CommitAccepted( 'domain0', version ) @ #i)) ∧
+     (#r < #i)) ⇒
+    (⊥)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ vnew version #r #i.
+  (UAVKeyRevoked( 'domain0', vnew ) @ #r) ∧
+  (CommitAccepted( 'domain0', version ) @ #i)
+ ∧
+  #r < #i"
+*/
+by sorry
+
+/* All wellformedness checks were successful. */
+
+/*
+Generated from:
+Tamarin version 1.13.0
+Maude version 3.5.1
+Git revision: f18aa45838c76518b35b91bbc74bc1ba71e1f0e6, branch: develop
+Compiled at: 2026-07-20 20:53:09.880815486 UTC
+*/
+
+end
+
+==============================================================================
+summary of summaries:
+
+analyzed: /home/just/tamarin-prover/examples/UAV_RemoteID_Revocation_Simplified_v3.spthy
+
+  processing time: 0.45s
+  
+  commit_reachable (exists-trace): analysis incomplete (1 steps)
+  commit_after_version_refresh_reachable (exists-trace): analysis incomplete (1 steps)
+  two_commits_across_version_refresh_reachable (exists-trace): analysis incomplete (1 steps)
+  commit_uses_latest_installed_version (all-traces): analysis incomplete (1 steps)
+  no_commit_after_root_revocation (all-traces): verified (398 steps)
+  no_commit_after_verifier_revocation (all-traces): analysis incomplete (1 steps)
+  no_commit_after_uav_key_revocation (all-traces): analysis incomplete (1 steps)
+
+==============================================================================
+real 0.48
+user 0.41
+sys 0.02

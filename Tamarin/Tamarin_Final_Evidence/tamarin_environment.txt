@@ -1,0 +1,29 @@
+Verification date: 2026-07-22T15:54:22+03:00
+
+Tamarin:
+tamarin-prover 1.13.0, (C) David Basin, Cas Cremers, Jannik Dreier, Simon Meier, Ralf Sasse, Benedikt Schmidt, 2010-2023
+
+This program comes with ABSOLUTELY NO WARRANTY. It is free software, and you
+are welcome to redistribute it according to its LICENSE, see
+'https://github.com/tamarin-prover/tamarin-prover/blob/master/LICENSE'.
+
+Generated from:
+Tamarin version 1.13.0
+Maude version 3.5.1
+Git revision: f18aa45838c76518b35b91bbc74bc1ba71e1f0e6, branch: develop
+Compiled at: 2026-07-20 20:53:09.880815486 UTC
+
+Maude:
+3.5.1
+
+Operating system:
+Linux DESKTOP-NGRKQF9 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 GNU/Linux
+
+Memory configuration:
+               total        used        free      shared  buff/cache   available
+Mem:           3.7Gi       447Mi       2.2Gi       3.5Mi       1.1Gi       3.2Gi
+Swap:          1.0Gi          0B       1.0Gi
+
+Proof execution:
+Each lemma was verified separately using:
++RTS -N1 -RTS

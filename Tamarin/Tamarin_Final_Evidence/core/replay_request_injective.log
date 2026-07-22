@@ -1,0 +1,1495 @@
+maude tool: 'maude'
+ checking version: 3.5.1. OK.
+ checking installation: OK.
+[Theory UAV_RemoteID_Core_Simplified] Theory loaded
+[Theory UAV_RemoteID_Core_Simplified] Theory translated
+[Theory UAV_RemoteID_Core_Simplified] Derivation checks started
+[Theory UAV_RemoteID_Core_Simplified] Derivation checks ended
+[Theory UAV_RemoteID_Core_Simplified] Theory closed
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
+theory UAV_RemoteID_Core_Simplified
+
+begin
+
+// Function signature and definition of the equational theory E
+
+functions: adec/2, aenc/2, fst/1, h/1, pair/2, pk/1, sdec/2, senc/2,
+           sign/2, snd/1, true/0, verify/3
+equations:
+    adec(aenc(x.1, pk(x.2)), x.2) = x.1,
+    fst(<x.1, x.2>) = x.1,
+    sdec(senc(x.1, x.2), x.2) = x.1,
+    snd(<x.1, x.2>) = x.2,
+    verify(sign(x.1, x.2), x.1, pk(x.2)) = true
+
+rule (modulo E) Setup:
+   [ Fr( ~skTA ), Fr( ~skV ), Fr( ~master ), Fr( ~ctxD ), Fr( ~seed ) ]
+  --[
+  SetupDone( $D, $V,
+             h(<
+                <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                 h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                    h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                 'scope-authorized', 'v0'>, 
+                sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                      h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                         h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                      'scope-authorized', 'v0'>,
+                     ~skTA)
+               >),
+             h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>)
+  ),
+  LeafAuthorized( $D,
+                  h(<
+                     <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                      h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                         h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                      'scope-authorized', 'v0'>, 
+                     sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                           h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                              h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                           'scope-authorized', 'v0'>,
+                          ~skTA)
+                    >),
+                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                     h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>),
+                  h(<'RID', ~seed, '0'>), '0'
+  ),
+  LeafAuthorized( $D,
+                  h(<
+                     <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                      h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                         h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                      'scope-authorized', 'v0'>, 
+                     sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                           h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                              h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                           'scope-authorized', 'v0'>,
+                          ~skTA)
+                    >),
+                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                     h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>),
+                  h(<'RID', ~seed, '1'>), '1'
+  )
+  ]->
+   [
+   !TAPub( pk(~skTA) ), !VerifierKey( $V, ~skV ),
+   !VerifierCert( $V, pk(~skV), 'scope-authorized',
+                  h(<<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                     sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>),
+                  <'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>,
+                  sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)
+   ),
+   !UAVKey( $D, h(<'PUF-SIGN', ~master, ~ctxD>),
+            pk(h(<'PUF-SIGN', ~master, ~ctxD>)),
+            h(pk(h(<'PUF-SIGN', ~master, ~ctxD>)))
+   ),
+   !RootAuthorization( $D,
+                       h(<
+                          <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                           h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                              h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                           'scope-authorized', 'v0'>, 
+                          sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                                   h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                                'scope-authorized', 'v0'>,
+                               ~skTA)
+                         >),
+                       h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                          h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>),
+                       pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 'scope-authorized', 'v0',
+                       <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                        h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                           h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                        'scope-authorized', 'v0'>,
+                       sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                             h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                                h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                             'scope-authorized', 'v0'>,
+                            ~skTA)
+   ),
+   !VerifierDB( $V, $D,
+                h(<
+                   <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                    h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                       h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                    'scope-authorized', 'v0'>, 
+                   sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                         h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                            h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                         'scope-authorized', 'v0'>,
+                        ~skTA)
+                  >),
+                h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                   h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>),
+                pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 'scope-authorized', 'v0',
+                <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                 h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                    h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                 'scope-authorized', 'v0'>,
+                sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                      h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                         h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                      'scope-authorized', 'v0'>,
+                     ~skTA)
+   ),
+   !LeafPath( $D,
+              h(<
+                 <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                     h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                  'scope-authorized', 'v0'>, 
+                 sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                       h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                          h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                       'scope-authorized', 'v0'>,
+                      ~skTA)
+                >),
+              h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                 h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>),
+              h(<'RID', ~seed, '0'>), '0', h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>),
+              'P0'
+   ),
+   !LeafPath( $D,
+              h(<
+                 <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                     h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                  'scope-authorized', 'v0'>, 
+                 sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                       h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                          h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                       'scope-authorized', 'v0'>,
+                      ~skTA)
+                >),
+              h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                 h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>),
+              h(<'RID', ~seed, '1'>), '1', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>),
+              'P1'
+   ),
+   !Slot( $D,
+          h(<
+             <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+              h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                 h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+              'scope-authorized', 'v0'>, 
+             sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                   h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                      h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                   'scope-authorized', 'v0'>,
+                  ~skTA)
+            >),
+          h(<'RID', ~seed, '0'>), '0', 'ts0'
+   ),
+   !Slot( $D,
+          h(<
+             <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+              h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                 h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+              'scope-authorized', 'v0'>, 
+             sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                   h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                      h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                   'scope-authorized', 'v0'>,
+                  ~skTA)
+            >),
+          h(<'RID', ~seed, '1'>), '1', 'ts1'
+   ),
+   !FlashImage( $D,
+                h(<
+                   <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                    h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                       h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                    'scope-authorized', 'v0'>, 
+                   sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                         h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                            h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                         'scope-authorized', 'v0'>,
+                        ~skTA)
+                  >),
+                h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                   h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>),
+                pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 'scope-authorized', 'v0',
+                <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                 h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                    h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                 'scope-authorized', 'v0'>,
+                sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                      h(<'NODE', h(<'LEAF', h(<'RID', ~seed, '0'>), '0'>), 
+                         h(<'LEAF', h(<'RID', ~seed, '1'>), '1'>)>), 
+                      'scope-authorized', 'v0'>,
+                     ~skTA)
+   ),
+   Out( pk(~skTA) ),
+   Out( <<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+         sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>
+   )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Broadcast:
+   [ !Slot( $D, rootID, pid, idx, tsV ) ]
+  --[ Broadcasted( $D, rootID, pid, idx, tsV ) ]->
+   [ Out( pid ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Verifier_Request:
+   [
+   !VerifierKey( $V, ~skV ),
+   !VerifierCert( $V, pkV, scope, certID, certBody, certSig ),
+   !Slot( $D, rootID, authRef, idx, tsV ), In( authRef ), Fr( ~dkV ),
+   Fr( ~nv )
+   ]
+  --[
+  RequestSent( $V, $D, rootID, authRef, idx, ~nv,
+               h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, pk(~dkV), 
+                  authRef, ~nv, tsV, scope, 'v0'>),
+               tsV, scope
+  )
+  ]->
+   [
+   ReplayToken( $D, certID,
+                h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, pk(~dkV), 
+                   authRef, ~nv, tsV, scope, 'v0'>)
+   ),
+   VerifierState( $V, $D, rootID, authRef, idx, ~nv,
+                  h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, pk(~dkV), 
+                     authRef, ~nv, tsV, scope, 'v0'>),
+                  <'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, pk(~dkV), authRef, ~nv, 
+                   tsV, scope, 'v0'>,
+                  ~dkV, tsV, scope
+   ),
+   Out( <
+         <'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, pk(~dkV), authRef, ~nv, 
+          tsV, scope, 'v0'>, 
+         sign(<'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, pk(~dkV), authRef, 
+               ~nv, tsV, scope, 'v0'>,
+              ~skV)
+        >
+   )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) UAV_Response:
+   [
+   ReplayToken( $D, certID,
+                h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                   authRef, nv, tsV, scope, 'v0'>)
+   ),
+   !TAPub( pkTA ),
+   !VerifierCert( $V, pkV, scope, certID, certBody, certSig ),
+   !UAVKey( $D, skD, pkD, keyID ),
+   !RootAuthorization( $D, rootID, root, pkD, scope, 'v0', authBody, authSig
+   ),
+   !LeafPath( $D, rootID, root, authRef, idx, sibling, pos ),
+   In( <
+        <'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, authRef, nv, tsV, 
+         scope, 'v0'>, 
+        sigV>
+   ),
+   Fr( ~ss ), Fr( ~tsD )
+   ]
+  --[
+  Eq( verify(certSig, certBody, pkTA), true ),
+  Eq( verify(sigV,
+             <'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, authRef, nv, tsV, 
+              scope, 'v0'>,
+             pkV),
+      true
+  ),
+  RequestAuthenticated( $V, $D, rootID, authRef, idx, nv,
+                        h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                           authRef, nv, tsV, scope, 'v0'>),
+                        tsV, scope
+  ),
+  ReplayConsumed( $D, certID,
+                  h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                     authRef, nv, tsV, scope, 'v0'>)
+  ),
+  UAVRunning( $D, $V, rootID, root, authRef, idx, nv,
+              h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                 authRef, nv, tsV, scope, 'v0'>),
+              tsV, ~tsD,
+              h(<'RID-UAV-RESPONSE-v1', 
+                 h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                    authRef, nv, tsV, scope, 'v0'>), 
+                 authRef, idx, rootID, nv, tsV, ~tsD, aenc(~ss, ekV)>)
+  ),
+  SessionKeyClaim( $V, $D,
+                   h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                      authRef, nv, tsV, scope, 'v0'>),
+                   h(<'RID-Auth', ~ss, 
+                      h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                         authRef, nv, tsV, scope, 'v0'>), 
+                      h(<'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, authRef, nv, 
+                         tsV, scope, 'v0'>)
+                     >)
+  )
+  ]->
+   [
+   Out( <
+         h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+            authRef, nv, tsV, scope, 'v0'>), 
+         aenc(~ss, ekV), 
+         senc(<authRef, idx, sibling, pos, rootID, ~tsD, 
+               sign(h(<'RID-UAV-RESPONSE-v1', 
+                       h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                          authRef, nv, tsV, scope, 'v0'>), 
+                       authRef, idx, rootID, nv, tsV, ~tsD, aenc(~ss, ekV)>),
+                    skD)
+              >,
+              h(<'RID-Auth', ~ss, 
+                 h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                    authRef, nv, tsV, scope, 'v0'>), 
+                 h(<'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, authRef, nv, 
+                    tsV, scope, 'v0'>)
+                >))
+        >
+   )
+   ]
+
+  /*
+  rule (modulo AC) UAV_Response:
+     [
+     ReplayToken( $D, certID,
+                  h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                     authRef, nv, tsV, scope, 'v0'>)
+     ),
+     !TAPub( pkTA ),
+     !VerifierCert( $V, pkV, scope, certID, certBody, certSig ),
+     !UAVKey( $D, skD, pkD, keyID ),
+     !RootAuthorization( $D, rootID, root, pkD, scope, 'v0', authBody, authSig
+     ),
+     !LeafPath( $D, rootID, root, authRef, idx, sibling, pos ),
+     In( <
+          <'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, authRef, nv, tsV, 
+           scope, 'v0'>, 
+          sigV>
+     ),
+     Fr( ~ss ), Fr( ~tsD )
+     ]
+    --[
+    Eq( z, true ), Eq( z.1, true ),
+    RequestAuthenticated( $V, $D, rootID, authRef, idx, nv,
+                          h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                             authRef, nv, tsV, scope, 'v0'>),
+                          tsV, scope
+    ),
+    ReplayConsumed( $D, certID,
+                    h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                       authRef, nv, tsV, scope, 'v0'>)
+    ),
+    UAVRunning( $D, $V, rootID, root, authRef, idx, nv,
+                h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                   authRef, nv, tsV, scope, 'v0'>),
+                tsV, ~tsD,
+                h(<'RID-UAV-RESPONSE-v1', 
+                   h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                      authRef, nv, tsV, scope, 'v0'>), 
+                   authRef, idx, rootID, nv, tsV, ~tsD, aenc(~ss, ekV)>)
+    ),
+    SessionKeyClaim( $V, $D,
+                     h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                        authRef, nv, tsV, scope, 'v0'>),
+                     h(<'RID-Auth', ~ss, 
+                        h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                           authRef, nv, tsV, scope, 'v0'>), 
+                        h(<'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, authRef, nv, 
+                           tsV, scope, 'v0'>)
+                       >)
+    )
+    ]->
+     [
+     Out( <
+           h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+              authRef, nv, tsV, scope, 'v0'>), 
+           aenc(~ss, ekV), 
+           senc(<authRef, idx, sibling, pos, rootID, ~tsD, 
+                 sign(h(<'RID-UAV-RESPONSE-v1', 
+                         h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                            authRef, nv, tsV, scope, 'v0'>), 
+                         authRef, idx, rootID, nv, tsV, ~tsD, aenc(~ss, ekV)>),
+                      skD)
+                >,
+                h(<'RID-Auth', ~ss, 
+                   h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, 
+                      authRef, nv, tsV, scope, 'v0'>), 
+                   h(<'RID-VERIFIER-REQUEST-v1', <certBody, certSig>, ekV, authRef, nv, 
+                      tsV, scope, 'v0'>)
+                  >))
+          >
+     )
+     ]
+    variants (modulo AC)
+    1. authRef
+             = authRef.53
+       certBody
+             = certBody.55
+       certSig
+             = certSig.57
+       ekV   = ekV.58
+       nv    = nv.61
+       pkTA  = pkTA.63
+       pkV   = pkV.64
+       scope = scope.68
+       sigV  = sigV.70
+       tsV   = tsV.72
+       z     = verify(certSig.57, certBody.55, pkTA.63)
+       z.1   = verify(sigV.70,
+                      <'RID-VERIFIER-REQUEST-v1', <certBody.55, certSig.57>, ekV.58, 
+                       authRef.53, nv.61, tsV.72, scope.68, 'v0'>,
+                      pkV.64)
+    
+    2. authRef
+             = authRef.144
+       certBody
+             = certBody.146
+       certSig
+             = sign(certBody.146, x.281)
+       ekV   = ekV.149
+       nv    = nv.152
+       pkTA  = pk(x.281)
+       pkV   = pkV.155
+       scope = scope.159
+       sigV  = sigV.161
+       tsV   = tsV.163
+       z     = true
+       z.1   = verify(sigV.161,
+                      <'RID-VERIFIER-REQUEST-v1', <certBody.146, sign(certBody.146, x.281)>, 
+                       ekV.149, authRef.144, nv.152, tsV.163, scope.159, 'v0'>,
+                      pkV.155)
+    
+    3. authRef
+             = authRef.152
+       certBody
+             = certBody.154
+       certSig
+             = sign(certBody.154, x.291)
+       ekV   = ekV.157
+       nv    = nv.160
+       pkTA  = pk(x.291)
+       pkV   = pk(x.297)
+       scope = scope.167
+       sigV  = sign(<'RID-VERIFIER-REQUEST-v1', 
+                     <certBody.154, sign(certBody.154, x.291)>, ekV.157, authRef.152, nv.160, 
+                     tsV.171, scope.167, 'v0'>,
+                    x.297)
+       tsV   = tsV.171
+       z     = true
+       z.1   = true
+    
+    4. authRef
+             = authRef.153
+       certBody
+             = certBody.155
+       certSig
+             = certSig.157
+       ekV   = ekV.158
+       nv    = nv.161
+       pkTA  = pkTA.163
+       pkV   = pk(x.299)
+       scope = scope.168
+       sigV  = sign(<'RID-VERIFIER-REQUEST-v1', <certBody.155, certSig.157>, 
+                     ekV.158, authRef.153, nv.161, tsV.172, scope.168, 'v0'>,
+                    x.299)
+       tsV   = tsV.172
+       z     = verify(certSig.157, certBody.155, pkTA.163)
+       z.1   = true
+  */
+
+rule (modulo E) Verifier_Accept_P0:
+   [
+   VerifierState( $V, $D, rootID, pid, '0', nv, reqID, req, dkV, tsV, scope
+   ),
+   !TAPub( pkTA ),
+   !VerifierDB( $V, $D, rootID, root, pkD, scope, 'v0',
+                <'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig
+   ),
+   In( <reqID, ct, 
+        senc(<pid, '0', sibling, 'P0', rootID, tsD, sigD>,
+             h(<'RID-Auth', adec(ct, dkV), reqID, h(req)>))
+       >
+   )
+   ]
+  --[
+  Eq( rootID, h(<<'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig>) ),
+  Eq( h(<'NODE', h(<'LEAF', pid, '0'>), sibling>), root ),
+  Eq( verify(authSig, <'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, pkTA), true
+  ),
+  Eq( verify(sigD,
+             h(<'RID-UAV-RESPONSE-v1', reqID, pid, '0', rootID, nv, tsV, tsD, ct>),
+             pkD),
+      true
+  ),
+  VerifierCommit( $V, $D, rootID, root, pid, '0', nv, reqID, tsV, tsD,
+                  h(<'RID-UAV-RESPONSE-v1', reqID, pid, '0', rootID, nv, tsV, tsD, ct>),
+                  scope
+  )
+  ]->
+   [ ]
+
+  /*
+  rule (modulo AC) Verifier_Accept_P0:
+     [
+     VerifierState( $V, $D, rootID, pid, '0', nv, reqID, req, dkV, tsV, scope
+     ),
+     !TAPub( pkTA ),
+     !VerifierDB( $V, $D, rootID, root, pkD, scope, 'v0',
+                  <'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig
+     ),
+     In( <reqID, ct, 
+          senc(<pid, '0', sibling, 'P0', rootID, tsD, sigD>,
+               h(<'RID-Auth', z, reqID, h(req)>))
+         >
+     )
+     ]
+    --[
+    Eq( rootID, h(<<'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig>) ),
+    Eq( h(<'NODE', h(<'LEAF', pid, '0'>), sibling>), root ), Eq( z.1, true ),
+    Eq( z.2, true ),
+    VerifierCommit( $V, $D, rootID, root, pid, '0', nv, reqID, tsV, tsD,
+                    h(<'RID-UAV-RESPONSE-v1', reqID, pid, '0', rootID, nv, tsV, tsD, ct>),
+                    scope
+    )
+    ]->
+     [ ]
+    variants (modulo AC)
+    1. authSig
+             = authSig.45
+       ct    = ct.46
+       dkV   = dkV.47
+       nv    = nv.48
+       pid   = pid.49
+       pkD   = pkD.50
+       pkTA  = pkTA.51
+       reqID = reqID.53
+       root  = root.54
+       rootID
+             = rootID.55
+       scope = scope.56
+       sigD  = sigD.58
+       tsD   = tsD.59
+       tsV   = tsV.60
+       z     = adec(ct.46, dkV.47)
+       z.1   = verify(authSig.45,
+                      <'ROOT-AUTH-v1', pkD.50, root.54, scope.56, 'v0'>, pkTA.51)
+       z.2   = verify(sigD.58,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.53, pid.49, '0', rootID.55, nv.48, 
+                         tsV.60, tsD.59, ct.46>),
+                      pkD.50)
+    
+    2. authSig
+             = authSig.51
+       ct    = aenc(z.72, pk(dkV.53))
+       dkV   = dkV.53
+       nv    = nv.54
+       pid   = pid.55
+       pkD   = pkD.56
+       pkTA  = pkTA.57
+       reqID = reqID.59
+       root  = root.60
+       rootID
+             = rootID.61
+       scope = scope.62
+       sigD  = sigD.64
+       tsD   = tsD.65
+       tsV   = tsV.66
+       z     = z.72
+       z.1   = verify(authSig.51,
+                      <'ROOT-AUTH-v1', pkD.56, root.60, scope.62, 'v0'>, pkTA.57)
+       z.2   = verify(sigD.64,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.59, pid.55, '0', rootID.61, nv.54, 
+                         tsV.66, tsD.65, aenc(z.72, pk(dkV.53))>),
+                      pkD.56)
+    
+    3. authSig
+             = authSig.223
+       ct    = ct.224
+       dkV   = dkV.225
+       nv    = nv.226
+       pid   = pid.227
+       pkD   = pk(x.442)
+       pkTA  = pkTA.229
+       reqID = reqID.231
+       root  = root.232
+       rootID
+             = rootID.233
+       scope = scope.234
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.231, pid.227, '0', 
+                       rootID.233, nv.226, tsV.238, tsD.237, ct.224>),
+                    x.442)
+       tsD   = tsD.237
+       tsV   = tsV.238
+       z     = adec(ct.224, dkV.225)
+       z.1   = verify(authSig.223,
+                      <'ROOT-AUTH-v1', pk(x.442), root.232, scope.234, 'v0'>, pkTA.229)
+       z.2   = true
+    
+    4. authSig
+             = authSig.223
+       ct    = aenc(z.244, pk(dkV.225))
+       dkV   = dkV.225
+       nv    = nv.226
+       pid   = pid.227
+       pkD   = pk(x.442)
+       pkTA  = pkTA.229
+       reqID = reqID.231
+       root  = root.232
+       rootID
+             = rootID.233
+       scope = scope.234
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.231, pid.227, '0', 
+                       rootID.233, nv.226, tsV.238, tsD.237, aenc(z.244, pk(dkV.225))>),
+                    x.442)
+       tsD   = tsD.237
+       tsV   = tsV.238
+       z     = z.244
+       z.1   = verify(authSig.223,
+                      <'ROOT-AUTH-v1', pk(x.442), root.232, scope.234, 'v0'>, pkTA.229)
+       z.2   = true
+    
+    5. authSig
+             = sign(<'ROOT-AUTH-v1', pkD.211, root.215, scope.217, 'v0'>, x.410)
+       ct    = aenc(z.227, pk(dkV.208))
+       dkV   = dkV.208
+       nv    = nv.209
+       pid   = pid.210
+       pkD   = pkD.211
+       pkTA  = pk(x.410)
+       reqID = reqID.214
+       root  = root.215
+       rootID
+             = rootID.216
+       scope = scope.217
+       sigD  = sigD.219
+       tsD   = tsD.220
+       tsV   = tsV.221
+       z     = z.227
+       z.1   = true
+       z.2   = verify(sigD.219,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.214, pid.210, '0', rootID.216, nv.209, 
+                         tsV.221, tsD.220, aenc(z.227, pk(dkV.208))>),
+                      pkD.211)
+    
+    6. authSig
+             = sign(<'ROOT-AUTH-v1', pkD.219, root.223, scope.225, 'v0'>, x.425)
+       ct    = ct.215
+       dkV   = dkV.216
+       nv    = nv.217
+       pid   = pid.218
+       pkD   = pkD.219
+       pkTA  = pk(x.425)
+       reqID = reqID.222
+       root  = root.223
+       rootID
+             = rootID.224
+       scope = scope.225
+       sigD  = sigD.227
+       tsD   = tsD.228
+       tsV   = tsV.229
+       z     = adec(ct.215, dkV.216)
+       z.1   = true
+       z.2   = verify(sigD.227,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.222, pid.218, '0', rootID.224, nv.217, 
+                         tsV.229, tsD.228, ct.215>),
+                      pkD.219)
+    
+    7. authSig
+             = sign(<'ROOT-AUTH-v1', pk(x.407), root.215, scope.217, 'v0'>, x.410)
+       ct    = aenc(z.227, pk(dkV.208))
+       dkV   = dkV.208
+       nv    = nv.209
+       pid   = pid.210
+       pkD   = pk(x.407)
+       pkTA  = pk(x.410)
+       reqID = reqID.214
+       root  = root.215
+       rootID
+             = rootID.216
+       scope = scope.217
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.214, pid.210, '0', 
+                       rootID.216, nv.209, tsV.221, tsD.220, aenc(z.227, pk(dkV.208))>),
+                    x.407)
+       tsD   = tsD.220
+       tsV   = tsV.221
+       z     = z.227
+       z.1   = true
+       z.2   = true
+    
+    8. authSig
+             = sign(<'ROOT-AUTH-v1', pk(x.422), root.223, scope.225, 'v0'>, x.425)
+       ct    = ct.215
+       dkV   = dkV.216
+       nv    = nv.217
+       pid   = pid.218
+       pkD   = pk(x.422)
+       pkTA  = pk(x.425)
+       reqID = reqID.222
+       root  = root.223
+       rootID
+             = rootID.224
+       scope = scope.225
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.222, pid.218, '0', 
+                       rootID.224, nv.217, tsV.229, tsD.228, ct.215>),
+                    x.422)
+       tsD   = tsD.228
+       tsV   = tsV.229
+       z     = adec(ct.215, dkV.216)
+       z.1   = true
+       z.2   = true
+  */
+
+rule (modulo E) Verifier_Accept_P1:
+   [
+   VerifierState( $V, $D, rootID, pid, '1', nv, reqID, req, dkV, tsV, scope
+   ),
+   !TAPub( pkTA ),
+   !VerifierDB( $V, $D, rootID, root, pkD, scope, 'v0',
+                <'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig
+   ),
+   In( <reqID, ct, 
+        senc(<pid, '1', sibling, 'P1', rootID, tsD, sigD>,
+             h(<'RID-Auth', adec(ct, dkV), reqID, h(req)>))
+       >
+   )
+   ]
+  --[
+  Eq( rootID, h(<<'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig>) ),
+  Eq( h(<'NODE', sibling, h(<'LEAF', pid, '1'>)>), root ),
+  Eq( verify(authSig, <'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, pkTA), true
+  ),
+  Eq( verify(sigD,
+             h(<'RID-UAV-RESPONSE-v1', reqID, pid, '1', rootID, nv, tsV, tsD, ct>),
+             pkD),
+      true
+  ),
+  VerifierCommit( $V, $D, rootID, root, pid, '1', nv, reqID, tsV, tsD,
+                  h(<'RID-UAV-RESPONSE-v1', reqID, pid, '1', rootID, nv, tsV, tsD, ct>),
+                  scope
+  )
+  ]->
+   [ ]
+
+  /*
+  rule (modulo AC) Verifier_Accept_P1:
+     [
+     VerifierState( $V, $D, rootID, pid, '1', nv, reqID, req, dkV, tsV, scope
+     ),
+     !TAPub( pkTA ),
+     !VerifierDB( $V, $D, rootID, root, pkD, scope, 'v0',
+                  <'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig
+     ),
+     In( <reqID, ct, 
+          senc(<pid, '1', sibling, 'P1', rootID, tsD, sigD>,
+               h(<'RID-Auth', z, reqID, h(req)>))
+         >
+     )
+     ]
+    --[
+    Eq( rootID, h(<<'ROOT-AUTH-v1', pkD, root, scope, 'v0'>, authSig>) ),
+    Eq( h(<'NODE', sibling, h(<'LEAF', pid, '1'>)>), root ), Eq( z.1, true ),
+    Eq( z.2, true ),
+    VerifierCommit( $V, $D, rootID, root, pid, '1', nv, reqID, tsV, tsD,
+                    h(<'RID-UAV-RESPONSE-v1', reqID, pid, '1', rootID, nv, tsV, tsD, ct>),
+                    scope
+    )
+    ]->
+     [ ]
+    variants (modulo AC)
+    1. authSig
+             = authSig.45
+       ct    = ct.46
+       dkV   = dkV.47
+       nv    = nv.48
+       pid   = pid.49
+       pkD   = pkD.50
+       pkTA  = pkTA.51
+       reqID = reqID.53
+       root  = root.54
+       rootID
+             = rootID.55
+       scope = scope.56
+       sigD  = sigD.58
+       tsD   = tsD.59
+       tsV   = tsV.60
+       z     = adec(ct.46, dkV.47)
+       z.1   = verify(authSig.45,
+                      <'ROOT-AUTH-v1', pkD.50, root.54, scope.56, 'v0'>, pkTA.51)
+       z.2   = verify(sigD.58,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.53, pid.49, '1', rootID.55, nv.48, 
+                         tsV.60, tsD.59, ct.46>),
+                      pkD.50)
+    
+    2. authSig
+             = authSig.51
+       ct    = aenc(z.72, pk(dkV.53))
+       dkV   = dkV.53
+       nv    = nv.54
+       pid   = pid.55
+       pkD   = pkD.56
+       pkTA  = pkTA.57
+       reqID = reqID.59
+       root  = root.60
+       rootID
+             = rootID.61
+       scope = scope.62
+       sigD  = sigD.64
+       tsD   = tsD.65
+       tsV   = tsV.66
+       z     = z.72
+       z.1   = verify(authSig.51,
+                      <'ROOT-AUTH-v1', pkD.56, root.60, scope.62, 'v0'>, pkTA.57)
+       z.2   = verify(sigD.64,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.59, pid.55, '1', rootID.61, nv.54, 
+                         tsV.66, tsD.65, aenc(z.72, pk(dkV.53))>),
+                      pkD.56)
+    
+    3. authSig
+             = authSig.223
+       ct    = ct.224
+       dkV   = dkV.225
+       nv    = nv.226
+       pid   = pid.227
+       pkD   = pk(x.442)
+       pkTA  = pkTA.229
+       reqID = reqID.231
+       root  = root.232
+       rootID
+             = rootID.233
+       scope = scope.234
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.231, pid.227, '1', 
+                       rootID.233, nv.226, tsV.238, tsD.237, ct.224>),
+                    x.442)
+       tsD   = tsD.237
+       tsV   = tsV.238
+       z     = adec(ct.224, dkV.225)
+       z.1   = verify(authSig.223,
+                      <'ROOT-AUTH-v1', pk(x.442), root.232, scope.234, 'v0'>, pkTA.229)
+       z.2   = true
+    
+    4. authSig
+             = authSig.223
+       ct    = aenc(z.244, pk(dkV.225))
+       dkV   = dkV.225
+       nv    = nv.226
+       pid   = pid.227
+       pkD   = pk(x.442)
+       pkTA  = pkTA.229
+       reqID = reqID.231
+       root  = root.232
+       rootID
+             = rootID.233
+       scope = scope.234
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.231, pid.227, '1', 
+                       rootID.233, nv.226, tsV.238, tsD.237, aenc(z.244, pk(dkV.225))>),
+                    x.442)
+       tsD   = tsD.237
+       tsV   = tsV.238
+       z     = z.244
+       z.1   = verify(authSig.223,
+                      <'ROOT-AUTH-v1', pk(x.442), root.232, scope.234, 'v0'>, pkTA.229)
+       z.2   = true
+    
+    5. authSig
+             = sign(<'ROOT-AUTH-v1', pkD.211, root.215, scope.217, 'v0'>, x.410)
+       ct    = aenc(z.227, pk(dkV.208))
+       dkV   = dkV.208
+       nv    = nv.209
+       pid   = pid.210
+       pkD   = pkD.211
+       pkTA  = pk(x.410)
+       reqID = reqID.214
+       root  = root.215
+       rootID
+             = rootID.216
+       scope = scope.217
+       sigD  = sigD.219
+       tsD   = tsD.220
+       tsV   = tsV.221
+       z     = z.227
+       z.1   = true
+       z.2   = verify(sigD.219,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.214, pid.210, '1', rootID.216, nv.209, 
+                         tsV.221, tsD.220, aenc(z.227, pk(dkV.208))>),
+                      pkD.211)
+    
+    6. authSig
+             = sign(<'ROOT-AUTH-v1', pkD.219, root.223, scope.225, 'v0'>, x.425)
+       ct    = ct.215
+       dkV   = dkV.216
+       nv    = nv.217
+       pid   = pid.218
+       pkD   = pkD.219
+       pkTA  = pk(x.425)
+       reqID = reqID.222
+       root  = root.223
+       rootID
+             = rootID.224
+       scope = scope.225
+       sigD  = sigD.227
+       tsD   = tsD.228
+       tsV   = tsV.229
+       z     = adec(ct.215, dkV.216)
+       z.1   = true
+       z.2   = verify(sigD.227,
+                      h(<'RID-UAV-RESPONSE-v1', reqID.222, pid.218, '1', rootID.224, nv.217, 
+                         tsV.229, tsD.228, ct.215>),
+                      pkD.219)
+    
+    7. authSig
+             = sign(<'ROOT-AUTH-v1', pk(x.407), root.215, scope.217, 'v0'>, x.410)
+       ct    = aenc(z.227, pk(dkV.208))
+       dkV   = dkV.208
+       nv    = nv.209
+       pid   = pid.210
+       pkD   = pk(x.407)
+       pkTA  = pk(x.410)
+       reqID = reqID.214
+       root  = root.215
+       rootID
+             = rootID.216
+       scope = scope.217
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.214, pid.210, '1', 
+                       rootID.216, nv.209, tsV.221, tsD.220, aenc(z.227, pk(dkV.208))>),
+                    x.407)
+       tsD   = tsD.220
+       tsV   = tsV.221
+       z     = z.227
+       z.1   = true
+       z.2   = true
+    
+    8. authSig
+             = sign(<'ROOT-AUTH-v1', pk(x.422), root.223, scope.225, 'v0'>, x.425)
+       ct    = ct.215
+       dkV   = dkV.216
+       nv    = nv.217
+       pid   = pid.218
+       pkD   = pk(x.422)
+       pkTA  = pk(x.425)
+       reqID = reqID.222
+       root  = root.223
+       rootID
+             = rootID.224
+       scope = scope.225
+       sigD  = sign(h(<'RID-UAV-RESPONSE-v1', reqID.222, pid.218, '1', 
+                       rootID.224, nv.217, tsV.229, tsD.228, ct.215>),
+                    x.422)
+       tsD   = tsD.228
+       tsV   = tsV.229
+       z     = adec(ct.215, dkV.216)
+       z.1   = true
+       z.2   = true
+  */
+
+rule (modulo E) Reveal_Passive_Storage:
+   [ !FlashImage( $D, rootID, root, pkD, scope, version, authBody, authSig )
+   ]
+  --[ FlashDisclosure( $D, rootID ) ]->
+   [ Out( <rootID, root, pkD, scope, version, authBody, authSig> ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Active_Capture:
+   [
+   !UAVKey( $D, skD, pkD, keyID ),
+   !LeafPath( $D, rootID, root, pid0, '0', sib0, 'P0' ),
+   !LeafPath( $D, rootID, root, pid1, '1', sib1, 'P1' )
+   ]
+  --[ ActiveCapture( $D ) ]->
+   [ Out( <skD, rootID, root, pid0, sib0, pid1, sib1> ) ]
+
+  /* has exactly the trivial AC variant */
+
+restriction Equality:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  */
+
+lemma commit_reachable:
+  exists-trace
+  "∃ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+    VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                    scope
+    ) @ #i"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+  (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                   scope
+   ) @ #i)"
+*/
+by sorry
+
+lemma two_distinct_sessions_reachable:
+  exists-trace
+  "∃ V D rootID root pid0 pid1 nv0 nv1 req0 req1 tsV0 tsV1 tsD0 tsD1 th0
+     th1 scope #i #j.
+    ((VerifierCommit( V, D, rootID, root, pid0, '0', nv0, req0, tsV0, tsD0,
+                      th0, scope
+      ) @ #i) ∧
+     (VerifierCommit( V, D, rootID, root, pid1, '1', nv1, req1, tsV1, tsD1,
+                      th1, scope
+      ) @ #j)) ∧
+    (¬(req0 = req1))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ V D rootID root pid0 pid1 nv0 nv1 req0 req1 tsV0 tsV1 tsD0 tsD1 th0
+   th1 scope #i #j.
+  (VerifierCommit( V, D, rootID, root, pid0, '0', nv0, req0, tsV0, tsD0,
+                   th0, scope
+   ) @ #i) ∧
+  (VerifierCommit( V, D, rootID, root, pid1, '1', nv1, req1, tsV1, tsD1,
+                   th1, scope
+   ) @ #j)
+ ∧
+  ¬(req0 = req1)"
+*/
+by sorry
+
+lemma request_authentication:
+  all-traces
+  "∀ V D rootID pid idx nv reqID tsV scope #i.
+    (RequestAuthenticated( V, D, rootID, pid, idx, nv, reqID, tsV, scope
+     ) @ #i) ⇒
+    (∃ #j.
+      (RequestSent( V, D, rootID, pid, idx, nv, reqID, tsV, scope ) @ #j) ∧
+      (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ V D rootID pid idx nv reqID tsV scope #i.
+  (RequestAuthenticated( V, D, rootID, pid, idx, nv, reqID, tsV, scope
+   ) @ #i)
+ ∧
+  ∀ #j.
+   (RequestSent( V, D, rootID, pid, idx, nv, reqID, tsV, scope ) @ #j)
+  ⇒
+   ¬(#j < #i)"
+*/
+by sorry
+
+lemma replay_request_injective:
+  all-traces
+  "∀ V1 V2 D root1 root2 pid1 pid2 idx1 idx2 nv reqID ts1 ts2 scope1 scope2
+     #i #j.
+    ((RequestAuthenticated( V1, D, root1, pid1, idx1, nv, reqID, ts1, scope1
+      ) @ #i) ∧
+     (RequestAuthenticated( V2, D, root2, pid2, idx2, nv, reqID, ts2, scope2
+      ) @ #j)) ⇒
+    (#i = #j)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ V1 V2 D root1 root2 pid1 pid2 idx1 idx2 nv reqID ts1 ts2 scope1 scope2
+   #i #j.
+  (RequestAuthenticated( V1, D, root1, pid1, idx1, nv, reqID, ts1, scope1
+   ) @ #i) ∧
+  (RequestAuthenticated( V2, D, root2, pid2, idx2, nv, reqID, ts2, scope2
+   ) @ #j)
+ ∧
+  ¬(#i = #j)"
+*/
+simplify
+solve( (#i < #j)  ∥ (#j < #i) )
+  case case_1
+  solve( ReplayToken( $D, certID,
+                      h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, sign(certBody, x)>, 
+                         ekV, pid1, nv, ts1, scope1, 'v0'>)
+         ) ▶₀ #i )
+    case Verifier_Request_case_1
+    solve( !TAPub( pk(~skTA) ) ▶₁ #i )
+      case Setup
+      solve( !VerifierCert( $V.1, pk(x), 'scope-authorized',
+                            h(<<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                               sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>),
+                            <'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>,
+                            sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)
+             ) ▶₂ #i )
+        case Setup
+        solve( !UAVKey( $D, skD, pkD, keyID ) ▶₃ #i )
+          case Setup
+          solve( !RootAuthorization( $D, root1, root,
+                                     pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 'scope-authorized', 'v0', authBody,
+                                     authSig
+                 ) ▶₄ #i )
+            case Setup
+            solve( !LeafPath( $D,
+                              h(<
+                                 <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                     h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                  'scope-authorized', 'v0'>, 
+                                 sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                       h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                          h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                       'scope-authorized', 'v0'>,
+                                      ~skTA.1)
+                                >),
+                              h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                 h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>),
+                              h(<'RID', ~seed, '0'>), idx1, sibling, pos
+                   ) ▶₅ #i )
+              case Setup
+              solve( ReplayToken( $D, certID,
+                                  h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', 
+                                     <<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                                      sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>, 
+                                     pk(~dkV), h(<'RID', ~seed, '0'>), ~nv, 'ts0', 'scope-authorized', 'v0'>)
+                     ) ▶₀ #j )
+                case Verifier_Request
+                by contradiction /* cyclic */
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  next
+    case Verifier_Request_case_2
+    solve( !TAPub( pk(~skTA) ) ▶₁ #i )
+      case Setup
+      solve( !VerifierCert( $V.1, pk(x), 'scope-authorized',
+                            h(<<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                               sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>),
+                            <'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>,
+                            sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)
+             ) ▶₂ #i )
+        case Setup
+        solve( !UAVKey( $D, skD, pkD, keyID ) ▶₃ #i )
+          case Setup
+          solve( !RootAuthorization( $D, root1, root,
+                                     pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 'scope-authorized', 'v0', authBody,
+                                     authSig
+                 ) ▶₄ #i )
+            case Setup
+            solve( !LeafPath( $D,
+                              h(<
+                                 <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                     h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                  'scope-authorized', 'v0'>, 
+                                 sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                       h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                          h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                       'scope-authorized', 'v0'>,
+                                      ~skTA.1)
+                                >),
+                              h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                 h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>),
+                              h(<'RID', ~seed, '1'>), idx1, sibling, pos
+                   ) ▶₅ #i )
+              case Setup
+              solve( ReplayToken( $D, certID,
+                                  h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', 
+                                     <<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                                      sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>, 
+                                     pk(~dkV), h(<'RID', ~seed, '1'>), ~nv, 'ts1', 'scope-authorized', 'v0'>)
+                     ) ▶₀ #j )
+                case Verifier_Request
+                by contradiction /* cyclic */
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+next
+  case case_2
+  solve( ReplayToken( $D, certID,
+                      h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', <certBody, sign(certBody, x)>, 
+                         ekV, pid1, nv, ts1, scope1, 'v0'>)
+         ) ▶₀ #i )
+    case Verifier_Request_case_1
+    solve( !TAPub( pk(~skTA) ) ▶₁ #i )
+      case Setup
+      solve( !VerifierCert( $V.1, pk(x), 'scope-authorized',
+                            h(<<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                               sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>),
+                            <'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>,
+                            sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)
+             ) ▶₂ #i )
+        case Setup
+        solve( !UAVKey( $D, skD, pkD, keyID ) ▶₃ #i )
+          case Setup
+          solve( !RootAuthorization( $D, root1, root,
+                                     pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 'scope-authorized', 'v0', authBody,
+                                     authSig
+                 ) ▶₄ #i )
+            case Setup
+            solve( !LeafPath( $D,
+                              h(<
+                                 <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                     h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                  'scope-authorized', 'v0'>, 
+                                 sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                       h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                          h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                       'scope-authorized', 'v0'>,
+                                      ~skTA.1)
+                                >),
+                              h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                 h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>),
+                              h(<'RID', ~seed, '0'>), idx1, sibling, pos
+                   ) ▶₅ #i )
+              case Setup
+              solve( ReplayToken( $D, certID,
+                                  h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', 
+                                     <<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                                      sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>, 
+                                     pk(~dkV), h(<'RID', ~seed, '0'>), ~nv, 'ts0', 'scope-authorized', 'v0'>)
+                     ) ▶₀ #j )
+                case Verifier_Request
+                by contradiction /* cyclic */
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  next
+    case Verifier_Request_case_2
+    solve( !TAPub( pk(~skTA) ) ▶₁ #i )
+      case Setup
+      solve( !VerifierCert( $V.1, pk(x), 'scope-authorized',
+                            h(<<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                               sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>),
+                            <'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>,
+                            sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)
+             ) ▶₂ #i )
+        case Setup
+        solve( !UAVKey( $D, skD, pkD, keyID ) ▶₃ #i )
+          case Setup
+          solve( !RootAuthorization( $D, root1, root,
+                                     pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 'scope-authorized', 'v0', authBody,
+                                     authSig
+                 ) ▶₄ #i )
+            case Setup
+            solve( !LeafPath( $D,
+                              h(<
+                                 <'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                  h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                     h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                  'scope-authorized', 'v0'>, 
+                                 sign(<'ROOT-AUTH-v1', pk(h(<'PUF-SIGN', ~master, ~ctxD>)), 
+                                       h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                          h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>), 
+                                       'scope-authorized', 'v0'>,
+                                      ~skTA.1)
+                                >),
+                              h(<'NODE', h(<'LEAF', h(<'RID', ~seed.1, '0'>), '0'>), 
+                                 h(<'LEAF', h(<'RID', ~seed.1, '1'>), '1'>)>),
+                              h(<'RID', ~seed, '1'>), idx1, sibling, pos
+                   ) ▶₅ #i )
+              case Setup
+              solve( ReplayToken( $D, certID,
+                                  h(<'ReqID', 'RID-VERIFIER-REQUEST-v1', 
+                                     <<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, 
+                                      sign(<'VERIFIER-CERT-v1', $V, pk(~skV), 'scope-authorized'>, ~skTA)>, 
+                                     pk(~dkV), h(<'RID', ~seed, '1'>), ~nv, 'ts1', 'scope-authorized', 'v0'>)
+                     ) ▶₀ #j )
+                case Verifier_Request
+                by contradiction /* cyclic */
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma authentication_noninjective_agreement:
+  all-traces
+  "∀ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+    ((VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                      scope
+      ) @ #i) ∧
+     (¬(∃ #c. (ActiveCapture( D ) @ #c) ∧ (#c < #i)))) ⇒
+    (∃ #j.
+      (UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+       ) @ #j) ∧
+      (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+  (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                   scope
+   ) @ #i)
+ ∧
+  (∀ #c. (ActiveCapture( D ) @ #c) ⇒ ¬(#c < #i)) ∧
+  (∀ #j.
+    (UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+     ) @ #j)
+   ⇒
+    ¬(#j < #i))"
+*/
+by sorry
+
+lemma authentication_injective_agreement:
+  all-traces
+  "∀ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+    ((VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                      scope
+      ) @ #i) ∧
+     (¬(∃ #c. (ActiveCapture( D ) @ #c) ∧ (#c < #i)))) ⇒
+    ((∃ #j.
+       (UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+        ) @ #j) ∧
+       (#j < #i)) ∧
+     (¬(∃ V2 D2 rootID2 root2 pid2 idx2 nv2 tsV2 tsD2 th2 scope2 #i2.
+         (VerifierCommit( V2, D2, rootID2, root2, pid2, idx2, nv2, reqID, tsV2,
+                          tsD2, th2, scope2
+          ) @ #i2) ∧
+         (¬(#i2 = #i)))))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+  (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                   scope
+   ) @ #i)
+ ∧
+  (∀ #c. (ActiveCapture( D ) @ #c) ⇒ ¬(#c < #i)) ∧
+  (((∀ #j.
+      (UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+       ) @ #j)
+     ⇒
+      ¬(#j < #i)) ∨
+    (∃ V2 D2 rootID2 root2 pid2 idx2 nv2 tsV2 tsD2 th2 scope2 #i2.
+      (VerifierCommit( V2, D2, rootID2, root2, pid2, idx2, nv2, reqID, tsV2,
+                       tsD2, th2, scope2
+       ) @ #i2)
+     ∧
+      ¬(#i2 = #i))))"
+*/
+by sorry
+
+lemma commit_binds_authorized_leaf_and_index:
+  all-traces
+  "∀ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+    (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                     scope
+     ) @ #i) ⇒
+    (∃ #a. (LeafAuthorized( D, rootID, root, pid, idx ) @ #a) ∧ (#a < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+  (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                   scope
+   ) @ #i)
+ ∧
+  ∀ #a. (LeafAuthorized( D, rootID, root, pid, idx ) @ #a) ⇒ ¬(#a < #i)"
+*/
+by sorry
+
+lemma session_key_secrecy:
+  all-traces
+  "∀ V D reqID k #i #j.
+    ((SessionKeyClaim( V, D, reqID, k ) @ #i) ∧ (K( k ) @ #j)) ⇒ (⊥)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ V D reqID k #i #j.
+  (SessionKeyClaim( V, D, reqID, k ) @ #i) ∧ (K( k ) @ #j)"
+*/
+by sorry
+
+lemma passive_storage_disclosure_preserves_agreement:
+  all-traces
+  "∀ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+    (((VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                       scope
+       ) @ #i) ∧
+      (∃ #f. (FlashDisclosure( D, rootID ) @ #f) ∧ (#f < #i))) ∧
+     (¬(∃ #c. (ActiveCapture( D ) @ #c) ∧ (#c < #i)))) ⇒
+    (∃ #j.
+      (UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+       ) @ #j) ∧
+      (#j < #i))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ V D rootID root pid idx nv reqID tsV tsD th scope #i.
+  (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                   scope
+   ) @ #i)
+ ∧
+  (∃ #f. (FlashDisclosure( D, rootID ) @ #f) ∧ #f < #i) ∧
+  (∀ #c. (ActiveCapture( D ) @ #c) ⇒ ¬(#c < #i)) ∧
+  (∀ #j.
+    (UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+     ) @ #j)
+   ⇒
+    ¬(#j < #i))"
+*/
+by sorry
+
+lemma active_capture_impersonation_reachable:
+  exists-trace
+  "∃ V D rootID root pid idx nv reqID tsV tsD th scope #c #i.
+    (((ActiveCapture( D ) @ #c) ∧
+      (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                       scope
+       ) @ #i)) ∧
+     (#c < #i)) ∧
+    (¬(∃ #r.
+        UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+        ) @ #r))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ V D rootID root pid idx nv reqID tsV tsD th scope #c #i.
+  (ActiveCapture( D ) @ #c) ∧
+  (VerifierCommit( V, D, rootID, root, pid, idx, nv, reqID, tsV, tsD, th,
+                   scope
+   ) @ #i)
+ ∧
+  (#c < #i) ∧
+  (∀ #r.
+    (UAVRunning( D, V, rootID, root, pid, idx, nv, reqID, tsV, tsD, th
+     ) @ #r)
+   ⇒
+    ⊥)"
+*/
+by sorry
+
+/* All wellformedness checks were successful. */
+
+/*
+Generated from:
+Tamarin version 1.13.0
+Maude version 3.5.1
+Git revision: f18aa45838c76518b35b91bbc74bc1ba71e1f0e6, branch: develop
+Compiled at: 2026-07-20 20:53:09.880815486 UTC
+*/
+
+end
+
+==============================================================================
+summary of summaries:
+
+analyzed: /home/just/tamarin-prover/examples/UAV_RemoteID_Core_Simplified.spthy
+
+  processing time: 13.95s
+  
+  commit_reachable (exists-trace): analysis incomplete (1 steps)
+  two_distinct_sessions_reachable (exists-trace): analysis incomplete (1 steps)
+  request_authentication (all-traces): analysis incomplete (1 steps)
+  replay_request_injective (all-traces): verified (32 steps)
+  authentication_noninjective_agreement (all-traces): analysis incomplete (1 steps)
+  authentication_injective_agreement (all-traces): analysis incomplete (1 steps)
+  commit_binds_authorized_leaf_and_index (all-traces): analysis incomplete (1 steps)
+  session_key_secrecy (all-traces): analysis incomplete (1 steps)
+  passive_storage_disclosure_preserves_agreement (all-traces): analysis incomplete (1 steps)
+  active_capture_impersonation_reachable (exists-trace): analysis incomplete (1 steps)
+
+==============================================================================
+real 14.00
+user 13.80
+sys 0.13

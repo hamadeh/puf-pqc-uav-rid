@@ -25,7 +25,7 @@ extractor, and a Merkle commitment over interval pseudonyms.
 | `UAV role/uav_proto/` | UAV protocol implementation and Raspberry Pi benchmarks |
 | `TA Verifier role/uav_proto/` | TA and verifier implementation for the Intel Mac |
 | `Hspice code/` | RO-PUF netlists, 100-process-instance PVT logs, analysis outputs, and response data |
-| `Tamarin/final_model_aligned.spthy` | Tamarin model aligned with the implemented protocol |
+| `Tamarin/` | Separate core-authentication and revocation Tamarin models, proved forms, logs, checksums, and verification evidence |
 | `Results/` | Collected Raspberry Pi and analysis result files |
 
 Generated private keys, pending-session state, emulated-PUF state, native
@@ -273,18 +273,34 @@ reconstructions succeeding for those enrolled instances. These are
 co-simulation results only; the remaining 46 simulated instances did not meet
 the enrollment criterion, and no fabricated device was measured.
 
-## Tamarin model
+## Tamarin models and verification evidence
 
-The aligned symbolic model is:
+The symbolic analysis is separated into two tractable theories:
 
-```text
-Tamarin/final_model_aligned.spthy
-```
+| Model | Purpose |
+|---|---|
+| `Tamarin/UAV_RemoteID_Core_Simplified.spthy` | Core Profile-P request authentication, replay resistance, agreement, Merkle leaf/index binding, session-key secrecy, passive storage disclosure, and active-capture negative control |
+| `Tamarin/UAV_RemoteID_Revocation_Simplified_v3.spthy` | Revocation-version consistency and fail-closed behavior for root, verifier, and UAV-key revocation |
+| `Tamarin/UAV_RemoteID_Core_Simplified_proved.spthy` | Proved/expanded core theory retained with the evidence package |
 
-With Tamarin Prover installed, run:
+With Tamarin Prover installed, run the source theories independently:
 
 ```bash
-tamarin-prover "Tamarin/final_model_aligned.spthy" --prove
+tamarin-prover "Tamarin/UAV_RemoteID_Core_Simplified.spthy" --prove
+tamarin-prover "Tamarin/UAV_RemoteID_Revocation_Simplified_v3.spthy" --prove
+```
+
+`Tamarin/Tamarin_Final_Evidence/` contains the exact model copies, individual
+lemma logs, consolidated core/revocation summaries, verification environment,
+and SHA-256 manifest from the completed run. The recorded environment used
+Tamarin 1.13.0 and Maude 3.5.1 under Linux/WSL2. All selected core and
+revocation lemmas were verified; `active_capture_impersonation_reachable` is an
+expected negative-control attack trace after active UAV capture.
+
+Verify the evidence bundle's integrity from the repository root:
+
+```bash
+sha256sum -c Tamarin/Tamarin_Final_Evidence/SHA256SUMS.txt
 ```
 
 ## Existing results

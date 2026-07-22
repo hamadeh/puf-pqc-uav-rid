@@ -1,0 +1,10 @@
+Tamarin revocation-model verification results
+Generated: 2026-07-22T16:03:44+03:00
+
+  commit_reachable (exists-trace): verified (4 steps)
+  commit_after_version_refresh_reachable (exists-trace): verified (7 steps)
+  two_commits_across_version_refresh_reachable (exists-trace): verified (8 steps)
+  commit_uses_latest_installed_version (all-traces): verified (1120 steps)
+  no_commit_after_root_revocation (all-traces): verified (398 steps)
+  no_commit_after_verifier_revocation (all-traces): verified (386 steps)
+  no_commit_after_uav_key_revocation (all-traces): verified (386 steps)
