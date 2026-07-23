@@ -7,7 +7,7 @@ CSeed. Nothing in this codebase generated a real challenge schedule
 before this file; challenges were ad hoc random tokens picked fresh at
 enrollment time rather than a reproducible schedule any later
 reconstruction (Phase 3 activation, Phase 4 authentication, or a
-verifier's HSpice-side analysis) could regenerate from CSeed alone.
+verifier's LTspice-side analysis) could regenerate from CSeed alone.
 
 UAV-side only: nothing on the TA/verifier side ever needs to
 regenerate a challenge schedule, so this module is not duplicated into

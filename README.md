@@ -6,17 +6,18 @@ the protocol between:
 
 - a Raspberry Pi 5 acting as the UAV;
 - an Intel Mac acting as the Trusted Authority (TA) and authorized verifier;
-- HSpice circuit/software co-simulation for the modeled 45 nm RO-PUF; and
+- LTspice circuit/software co-simulation for the modeled 45 nm RO-PUF; and
 - a Tamarin model for symbolic protocol analysis.
 
 The cryptographic prototype uses ML-DSA-65, ML-KEM-768, Ascon-Hash256,
 Ascon-AEAD128, TupleHash256, a BCH-based fuzzy extractor, a seeded Toeplitz
 extractor, and a Merkle commitment over interval pseudonyms.
 
-> **Scientific boundary:** HSpice-derived PUF results are circuit-simulation
+> **Scientific boundary:** LTspice-derived PUF results are circuit-simulation
 > results, not fabricated-silicon measurements. Raspberry Pi timings measure
 > software processing and never represent physical PUF acquisition latency.
-> Radio/network transport latency and energy are not estimated.
+> Live Wi-Fi transport results are reported separately and are not isolated
+> radio latency or energy measurements.
 
 ## Repository layout
 
@@ -24,7 +25,7 @@ extractor, and a Merkle commitment over interval pseudonyms.
 |---|---|
 | `UAV role/uav_proto/` | UAV protocol implementation and Raspberry Pi benchmarks |
 | `TA Verifier role/uav_proto/` | TA and verifier implementation for the Intel Mac |
-| `Hspice code/` | RO-PUF netlists, 100-process-instance PVT logs, analysis outputs, and response data |
+| `LTspice code/` | RO-PUF netlists, 100-process-instance PVT logs, analysis outputs, and response data |
 | `Tamarin/` | Separate core-authentication and revocation Tamarin models, proved forms, logs, checksums, and verification evidence |
 | `Results/` | Collected Raspberry Pi and analysis result files |
 
@@ -291,14 +292,14 @@ software processing, but excludes request generation and final verifier
 processing. It is not isolated radio latency. Packet-capture retransmissions
 are TCP observations, not IEEE 802.11 MAC retry counts.
 
-## HSpice RO-PUF artifacts
+## LTspice RO-PUF artifacts
 
-`Hspice code/` contains the 45 nm modeled RO-PUF netlists, a fixed population
-of 100 simulated process instances, PVT logs, and processed CSV/MAT/PNG
-outputs. The main population outputs are under:
+`LTspice code/` contains the 45 nm modeled RO-PUF netlists, a fixed population
+of 100 simulated process instances, LTspice 26.0.2 PVT logs, and processed
+CSV/MAT/PNG outputs. The main population outputs are under:
 
 ```text
-Hspice code/RO_PUF_PVT_100_results/
+LTspice code/RO_PUF_PVT_100_results/
 ```
 
 The committed analysis reports 100 valid simulated process logs, 54 enrolled

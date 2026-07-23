@@ -29,7 +29,7 @@ carries the remaining 87 bits (plus the fixed padding bit) through
 uncorrected. For a timing benchmark this has no material effect (BCH
 decode cost is governed by n and t, not by a 7-bit difference in k);
 it would matter for a correctness/entropy claim, which is Task C's
-job with real HSpice data, not this module's.
+job with real LTspice data, not this module's.
 
 TAIL-ZEROING, a correctness fix (not present in the first version of
 this module): the 87 bits beyond the BCH-protected message are never

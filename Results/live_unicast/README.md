@@ -23,7 +23,7 @@ isolated physical-layer loss.
 
 The RTT includes Wi-Fi transport and UAV software processing. It must not be
 reported as pure radio latency, physical PUF acquisition latency, or fabricated
-silicon performance. HSpice PUF quantities elsewhere in the repository remain
+silicon performance. LTspice PUF quantities elsewhere in the repository remain
 simulation results.
 
 Files:

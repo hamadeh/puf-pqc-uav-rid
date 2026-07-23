@@ -3,7 +3,7 @@ puf_emulated.py
 
 SOFTWARE-EMULATED PUF. This is NOT a real RO-PUF, and its bit-error
 behavior is NOT a modeled prediction of one -- that co-simulation
-boundary belongs to HSpice (see the Hspice code/ directory and Task
+boundary belongs to LTspice (see the LTspice code/ directory and Task
 C's entropy-characterization pipeline), never to this emulator. This
 module exists purely so Phase 2/3/4's majority-voting and BCH-
 correction code paths have something to run against on a machine with
