@@ -1,39 +1,39 @@
 operation,side,n,mean_ms,std_ms,min_ms,max_ms,trials,notes
-Full root activation including sorted PIDIndex construction,UAV,1024,557.125023,7.730146,547.881327,569.451219,30,includes supplied-vector reconstruction; excludes physical acquisition
-Indexed pseudonym lookup,UAV,1024,0.007182,0.001208,0.00651,0.011094,30,"bisect over sorted (PID,j) entries"
-Merkle-path extraction,UAV,1024,0.013363,0.001052,0.01276,0.017917,30,path_nodes=10
-PUF-vector processing + BCH reconstruction + Toeplitz (S1),UAV,-,3.882641,0.092994,3.731965,4.154463,30,1023x9 vector supplied before timer; physical acquisition excluded
-PUF-vector processing + BCH reconstruction + Toeplitz (S2),UAV,-,3.87566,0.071881,3.801913,4.074307,30,1023x9 vector supplied before timer; physical acquisition excluded
-Deterministic ML-DSA-65 key regeneration,UAV,-,0.780412,0.129098,0.678748,1.330099,30,
-ML-KEM-768 encapsulation,UAV,-,0.340138,0.035215,0.307186,0.430311,30,
-ML-KEM-768 decapsulation,Verifier,-,0.293304,0.026855,0.272395,0.398332,30,
-Verifier-request ML-DSA signature generation,Verifier,-,1.831555,0.828469,0.884893,3.926027,30,
-Verifier-request ML-DSA signature verification,UAV,-,0.596321,0.026897,0.572446,0.681456,30,
-UAV transcript ML-DSA signature generation,UAV,-,1.726884,0.760499,0.914788,4.119046,30,
-UAV transcript ML-DSA signature verification,Verifier,-,0.601038,0.033005,0.573748,0.684997,30,
-Ascon-AEAD128 encryption,UAV,1024,0.155039,0.014326,0.144895,0.202447,30,plaintext=14984 bytes
-Ascon-AEAD128 decryption,Verifier,1024,0.156128,0.010271,0.14901,0.198437,30,ciphertext+tag=15000 bytes
-Complete verifier request generation + serialization,Verifier,1024,4.548397,0.910479,3.301758,6.833411,30,includes ephemeral ML-KEM key generation and request signature
-Complete UAV-side software (request processing + response serialization),UAV,1024,13.13256,0.565827,12.405473,15.021608,30,physical PUF acquisition and transport excluded
-Complete verifier response processing,Verifier,1024,7.87156,0.202967,7.655387,8.339708,30,"includes deserialization, decapsulation, AEAD, AuthRec, Merkle, signature"
-Complete verifier-side software (request + response),Verifier,1024,12.93086,1.234127,11.410372,17.866389,30,sum of timed request generation and response processing; UAV time excluded
-Complete end-to-end software (UAV + verifier),Both,1024,25.830864,1.266689,23.935117,28.797598,30,request + UAV processing + verifier processing; transport and physical PUF excluded
-Full root activation including sorted PIDIndex construction,UAV,16384,9841.034255,517.373481,8867.357506,11182.319738,30,includes supplied-vector reconstruction; excludes physical acquisition
-Indexed pseudonym lookup,UAV,16384,0.008984,0.000377,0.008646,0.010625,30,"bisect over sorted (PID,j) entries"
-Merkle-path extraction,UAV,16384,0.019998,0.001176,0.019374,0.02474,30,path_nodes=14
-PUF-vector processing + BCH reconstruction + Toeplitz (S1),UAV,-,4.143207,0.074264,3.931291,4.277488,30,1023x9 vector supplied before timer; physical acquisition excluded
-PUF-vector processing + BCH reconstruction + Toeplitz (S2),UAV,-,3.997107,0.088325,3.908687,4.153217,30,1023x9 vector supplied before timer; physical acquisition excluded
-Deterministic ML-DSA-65 key regeneration,UAV,-,0.756104,0.032468,0.730779,0.898122,30,
-ML-KEM-768 encapsulation,UAV,-,0.362572,0.023721,0.346249,0.445572,30,
-ML-KEM-768 decapsulation,Verifier,-,0.320905,0.020157,0.3075,0.390676,30,
-Verifier-request ML-DSA signature generation,Verifier,-,1.739462,0.815907,0.884998,4.284833,30,
-Verifier-request ML-DSA signature verification,UAV,-,0.615962,0.018828,0.600935,0.6913,30,
-UAV transcript ML-DSA signature generation,UAV,-,1.515008,0.532716,0.884841,2.906346,30,
-UAV transcript ML-DSA signature verification,Verifier,-,0.619149,0.020954,0.603852,0.695571,30,
-Ascon-AEAD128 encryption,UAV,16384,0.161899,0.01064,0.154635,0.199843,30,plaintext=15439 bytes
-Ascon-AEAD128 decryption,Verifier,16384,0.166322,0.007655,0.161354,0.195677,30,ciphertext+tag=15455 bytes
-Complete verifier request generation + serialization,Verifier,16384,4.466472,0.807075,3.492074,6.318003,30,includes ephemeral ML-KEM key generation and request signature
-Complete UAV-side software (request processing + response serialization),UAV,16384,14.404862,0.776198,13.251423,16.808965,30,physical PUF acquisition and transport excluded
-Complete verifier response processing,Verifier,16384,9.220065,0.061491,9.118205,9.361225,30,"includes deserialization, decapsulation, AEAD, AuthRec, Merkle, signature"
-Complete verifier-side software (request + response),Verifier,16384,13.923077,0.926233,12.718715,16.741987,30,sum of timed request generation and response processing; UAV time excluded
-Complete end-to-end software (UAV + verifier),Both,16384,28.950647,1.5066,26.42821,32.629547,30,request + UAV processing + verifier processing; transport and physical PUF excluded
+Full root activation including sorted PIDIndex construction,UAV,1024,71.061689,0.344743,70.070313,71.665898,30,includes supplied-vector reconstruction; excludes physical acquisition
+Indexed pseudonym lookup,UAV,1024,0.000873,0.000219,0.000778,0.001926,30,"bisect over sorted (PID,j) entries"
+Merkle-path extraction,UAV,1024,0.002104,0.000483,0.001703,0.004037,30,path_nodes=10
+PUF-vector processing + BCH reconstruction + Toeplitz (S1),UAV,-,0.559113,0.015187,0.540942,0.595923,30,1023x9 vector supplied before timer; physical acquisition excluded
+PUF-vector processing + BCH reconstruction + Toeplitz (S2),UAV,-,0.561232,0.020011,0.541997,0.636682,30,1023x9 vector supplied before timer; physical acquisition excluded
+Deterministic ML-DSA-65 key regeneration,UAV,-,0.21825,0.018133,0.202129,0.283202,30,
+ML-KEM-768 encapsulation,UAV,-,0.112407,0.032991,0.074055,0.186518,30,
+ML-KEM-768 decapsulation,Verifier,-,0.054215,0.007893,0.051685,0.095795,30,
+Verifier-request ML-DSA signature generation,Verifier,-,1.092529,0.988945,0.380258,5.630305,30,
+Verifier-request ML-DSA signature verification,UAV,-,0.212137,0.010086,0.201425,0.240407,30,
+UAV transcript ML-DSA signature generation,UAV,-,1.144259,1.068755,0.372961,4.517459,30,
+UAV transcript ML-DSA signature verification,Verifier,-,0.216032,0.018168,0.201666,0.269906,30,
+Ascon-AEAD128 encryption,UAV,1024,0.042,0.000792,0.040889,0.044426,30,plaintext=14984 bytes
+Ascon-AEAD128 decryption,Verifier,1024,0.042646,0.003063,0.041148,0.058592,30,ciphertext+tag=15000 bytes
+Complete verifier request generation + serialization,Verifier,1024,1.507712,0.648027,0.799403,3.627463,30,includes ephemeral ML-KEM key generation and request signature
+Complete UAV-side software (request processing + response serialization),UAV,1024,3.303593,0.531416,2.690801,4.862698,30,physical PUF acquisition and transport excluded
+Complete verifier response processing,Verifier,1024,1.474158,0.111014,1.333716,1.74664,30,"includes deserialization, decapsulation, AEAD, AuthRec, Merkle, signature"
+Complete verifier-side software (request + response),Verifier,1024,2.959456,0.63932,2.3196,5.000327,30,sum of timed request generation and response processing; UAV time excluded
+Complete end-to-end software (UAV + verifier),Both,1024,6.018107,0.601706,5.139271,7.577555,30,request + UAV processing + verifier processing; transport and physical PUF excluded
+Full root activation including sorted PIDIndex construction,UAV,16384,1206.348302,37.91645,1142.445203,1287.977284,30,includes supplied-vector reconstruction; excludes physical acquisition
+Indexed pseudonym lookup,UAV,16384,0.001667,0.000155,0.001574,0.00237,30,"bisect over sorted (PID,j) entries"
+Merkle-path extraction,UAV,16384,0.003778,0.000215,0.003685,0.004815,30,path_nodes=14
+PUF-vector processing + BCH reconstruction + Toeplitz (S1),UAV,-,0.628493,0.048792,0.57809,0.867588,30,1023x9 vector supplied before timer; physical acquisition excluded
+PUF-vector processing + BCH reconstruction + Toeplitz (S2),UAV,-,0.599303,0.020143,0.576645,0.658089,30,1023x9 vector supplied before timer; physical acquisition excluded
+Deterministic ML-DSA-65 key regeneration,UAV,-,0.241565,0.026099,0.220258,0.306388,30,
+ML-KEM-768 encapsulation,UAV,-,0.096771,0.01127,0.081907,0.134888,30,
+ML-KEM-768 decapsulation,Verifier,-,0.058283,0.007915,0.055037,0.100296,30,
+Verifier-request ML-DSA signature generation,Verifier,-,1.118762,0.747372,0.403795,3.890796,30,
+Verifier-request ML-DSA signature verification,UAV,-,0.215784,0.012578,0.201628,0.243369,30,
+UAV transcript ML-DSA signature generation,UAV,-,0.929356,0.643297,0.379795,3.640742,30,
+UAV transcript ML-DSA signature verification,Verifier,-,0.228567,0.011474,0.219943,0.268555,30,
+Ascon-AEAD128 encryption,UAV,16384,0.04738,0.001401,0.045388,0.051278,30,plaintext=15439 bytes
+Ascon-AEAD128 decryption,Verifier,16384,0.047434,0.00295,0.045833,0.059555,30,ciphertext+tag=15455 bytes
+Complete verifier request generation + serialization,Verifier,16384,1.328719,0.420682,0.817459,2.271323,30,includes ephemeral ML-KEM key generation and request signature
+Complete UAV-side software (request processing + response serialization),UAV,16384,3.527981,0.449008,2.88469,4.739404,30,physical PUF acquisition and transport excluded
+Complete verifier response processing,Verifier,16384,1.708683,0.126143,1.532197,2.052361,30,"includes deserialization, decapsulation, AEAD, AuthRec, Merkle, signature"
+Complete verifier-side software (request + response),Verifier,16384,3.291314,0.677835,2.595636,5.055753,30,sum of timed request generation and response processing; UAV time excluded
+Complete end-to-end software (UAV + verifier),Both,16384,6.924985,0.864355,5.524474,8.631051,30,request + UAV processing + verifier processing; transport and physical PUF excluded

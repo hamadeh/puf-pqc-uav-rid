@@ -26,7 +26,7 @@ import crypto_primitives as _cp
 
 # ---- Phase 1 parameters (Params, per the paper's Eq. system_params) ----
 DELTA_T_SECONDS = 1          # Remote ID pseudonym interval
-N_INTERVALS = 16              # n: intervals per Merkle root (small for local testing)
+N_INTERVALS = 1024             # n: publication-scale default; Phase 1 accepts --n
 M_ROOTS = 2                    # m: roots per enrollment/renewal cycle
 SECURITY_PARAMETER_BITS = 128  # lambda
 

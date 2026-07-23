@@ -1,0 +1,68 @@
+{
+  "experiment_date": "2026-07-23",
+  "channel": "TCP over a shared Wi-Fi LAN",
+  "roles": {
+    "uav": "Raspberry Pi 5",
+    "verifier": "Intel MacBook Pro 11,5; 2.5 GHz Core i7; 16 GB; macOS 12.7.6"
+  },
+  "method": {
+    "warmup_trials_discarded": 1,
+    "recorded_trials_per_n": 30,
+    "fresh_request_per_trial": true,
+    "cryptographic_response_verification": true,
+    "rtt_start": "after TCP connection establishment, immediately before request framing is sent",
+    "rtt_end": "after the complete framed response is received",
+    "excluded_from_rtt": [
+      "TCP connection establishment",
+      "verifier request generation",
+      "final verifier response processing"
+    ],
+    "packet_capture": "tcpdump on the verifier Wi-Fi interface; TShark TCP/IP analysis"
+  },
+  "results": [
+    {
+      "n": 1024,
+      "accepted_trials": 30,
+      "failed_trials": 0,
+      "rtt_mean_ms": 420.733652,
+      "rtt_std_ms": 90.834769,
+      "rtt_ci95_ms": [386.819200, 454.648104],
+      "pi_processing_mean_ms": 336.430479,
+      "pi_processing_std_ms": 13.818108,
+      "request_payload_mean_bytes": 20125.133,
+      "response_payload_mean_bytes": 32398.600,
+      "total_payload_mean_bytes": 52523.733,
+      "tcp_packets_mean": 61.833,
+      "tcp_packets_std": 2.306,
+      "captured_frame_bytes_mean": 56982,
+      "tshark_retransmissions": 19,
+      "tshark_lost_segment_indications": 2,
+      "ipv4_fragments": 0
+    },
+    {
+      "n": 16384,
+      "accepted_trials": 30,
+      "failed_trials": 0,
+      "rtt_mean_ms": 1494.864855,
+      "rtt_std_ms": 104.447209,
+      "rtt_ci95_ms": [1455.868005, 1533.861704],
+      "pi_processing_mean_ms": 1387.339515,
+      "pi_processing_std_ms": 13.124646,
+      "request_payload_mean_bytes": 20125.267,
+      "response_payload_mean_bytes": 33306.533,
+      "total_payload_mean_bytes": 53431.800,
+      "tcp_packets_mean": 63.667,
+      "tcp_packets_std": 3.155,
+      "captured_frame_bytes_mean": 58059,
+      "tshark_retransmissions": 17,
+      "tshark_lost_segment_indications": 1,
+      "ipv4_fragments": 0
+    }
+  ],
+  "interpretation_boundary": [
+    "RTT includes Wi-Fi transport and UAV application processing; it is not isolated radio latency.",
+    "TShark retransmissions are TCP-layer observations, not IEEE 802.11 MAC retry counts.",
+    "Zero application failures does not establish zero physical-layer packet loss.",
+    "These measurements are not physical PUF acquisition timings."
+  ]
+}

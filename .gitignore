@@ -12,6 +12,13 @@ __pycache__/
 
 # Compiled artifacts (machine-specific, rebuilt locally per README)
 *.so
+*.so.backup_*
+
+# Disposable enrollment/session archives may contain private state.
+**/archives/
+
+# Live server logs are run-specific; curated results live under Results/.
+**/live_unicast_pi_processing.csv
 
 # Secrets -- never commit these, matching this codebase's own
 # *_DO_NOT_SHARE.json naming convention

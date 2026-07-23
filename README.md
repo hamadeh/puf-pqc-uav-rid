@@ -189,8 +189,12 @@ the other role's matching `in/` directory between steps.
 
 ```bash
 cd "TA Verifier role/uav_proto/computer_side"
-python3 ta_phase1_init.py
+python3 ta_phase1_init.py --n 1024
 ```
+
+Use `--n 16384` for the second report-scale experiment. Phase 1 validates that
+`n` is a positive power of two, so switching sizes no longer requires editing
+`shared/protocol_common.py`.
 
 Copy `out/ta_public_params.json` to `UAV role/uav_proto/pi_side/in/`.
 
@@ -257,6 +261,36 @@ A successful run ends with:
 ACCEPT: signing identity and Merkle root both bound.
 ```
 
+## Live Wi-Fi unicast experiment
+
+After enrollment, verifier enrollment, and one Phase 3 broadcast, start the
+TCP wrapper on the Pi:
+
+```bash
+cd "UAV role/uav_proto/pi_side"
+python3 uav_tcp_server.py --n 1024
+```
+
+Run one discarded warmup and 30 fresh, verified sessions from the Mac:
+
+```bash
+cd "TA Verifier role/uav_proto/computer_side"
+python3 verifier_tcp_client.py \
+  --host PI_IP --port 40444 --n 1024 \
+  --warmup 1 --trials 30 --fresh-request --verify-response
+```
+
+Repeat the full enrollment and experiment with `n=16384`. Capture the TCP/IP
+exchange with `tcpdump` when packet counts, retransmissions, and fragmentation
+are required. The synchronized raw CSV/JSON/PCAP datasets, comparison summary,
+and LaTeX rows are under `Results/live_unicast/`.
+
+The application RTT timer starts after TCP connection establishment and ends
+after reception of the complete response. It includes Wi-Fi transport and UAV
+software processing, but excludes request generation and final verifier
+processing. It is not isolated radio latency. Packet-capture retransmissions
+are TCP observations, not IEEE 802.11 MAC retry counts.
+
 ## HSpice RO-PUF artifacts
 
 `Hspice code/` contains the 45 nm modeled RO-PUF netlists, a fixed population
@@ -308,9 +342,10 @@ sha256sum -c Tamarin/Tamarin_Final_Evidence/SHA256SUMS.txt
 `Results/results_final_protocol_metadata.json` identifies the committed final
 software benchmark as a Raspberry Pi aarch64 run with native Ascon, supplied
 PUF vectors, `n=1024` and `n=16384`, 30 recorded trials, and one discarded
-warm-up. Consult the metadata and availability CSV together with every timing
-table; do not reinterpret unavailable physical-PUF, transport, or energy
-quantities as zero.
+warm-up. `Results/live_unicast/` contains the separate live Wi-Fi/TCP
+evaluation. Consult each metadata file and availability CSV together with its
+timing table; do not reinterpret unavailable physical-PUF or energy quantities
+as zero.
 
 ## Security and reproducibility notes
 

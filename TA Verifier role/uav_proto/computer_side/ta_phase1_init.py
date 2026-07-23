@@ -21,6 +21,7 @@ Run this once. It produces two files:
       directory listing which file is safe to move and which isn't.
 """
 
+import argparse
 import sys
 import os
 
@@ -33,7 +34,19 @@ OUT_DIR = os.path.join(os.path.dirname(__file__), "out")
 
 
 def main():
+    parser = argparse.ArgumentParser(description="TA system initialization")
+    parser.add_argument("--n", type=int, default=pc.N_INTERVALS,
+                        help="intervals per Merkle root (power of two)")
+    parser.add_argument("--m", type=int, default=pc.M_ROOTS,
+                        help="authorized roots per enrollment cycle")
+    args = parser.parse_args()
+    if args.n < 1 or args.n & (args.n - 1):
+        parser.error("--n must be a positive power of two")
+    if args.m < 1:
+        parser.error("--m must be positive")
+
     print(f"Phase 1: System Initialization (TA)")
+    print(f"Protocol parameters: n={args.n}, m={args.m}")
     print(f"Generating {pc.ML_DSA_ALG} signing key pair for the TA...")
 
     with oqs.Signature(pc.ML_DSA_ALG) as signer:
@@ -49,8 +62,8 @@ def main():
         "ml_dsa_alg": pc.ML_DSA_ALG,
         "ml_kem_alg": pc.ML_KEM_ALG,
         "delta_t_seconds": pc.DELTA_T_SECONDS,
-        "n_intervals": pc.N_INTERVALS,
-        "m_roots": pc.M_ROOTS,
+        "n_intervals": args.n,
+        "m_roots": args.m,
         "security_parameter_bits": pc.SECURITY_PARAMETER_BITS,
     }
     public_path = os.path.join(OUT_DIR, "ta_public_params.json")

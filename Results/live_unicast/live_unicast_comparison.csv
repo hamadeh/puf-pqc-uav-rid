@@ -1,0 +1,3 @@
+n,recorded_trials,warmup_trials,accepted_trials,failed_trials,rtt_mean_ms,rtt_std_ms,rtt_ci95_low_ms,rtt_ci95_high_ms,rtt_min_ms,rtt_max_ms,pi_processing_mean_ms,pi_processing_std_ms,request_payload_mean_bytes,response_payload_mean_bytes,total_payload_mean_bytes,tcp_packets_mean,tcp_packets_std,captured_frame_bytes_mean,tshark_retransmissions,tshark_lost_segment_indications,ipv4_fragments
+1024,30,1,30,0,420.733652,90.834769,386.819200,454.648104,343.848925,706.006593,336.430479,13.818108,20125.133,32398.600,52523.733,61.833,2.306,56982,19,2,0
+16384,30,1,30,0,1494.864855,104.447209,1455.868005,1533.861704,1397.275460,1756.474665,1387.339515,13.124646,20125.267,33306.533,53431.800,63.667,3.155,58059,17,1,0
