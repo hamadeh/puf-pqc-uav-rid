@@ -19,6 +19,23 @@ __pycache__/
 
 # Live server logs are run-specific; curated results live under Results/.
 **/live_unicast_pi_processing.csv
+**/computer_side/live_unicast_*
+**/computer_side/results_protocol_v1_n*/
+**/computer_side/results_table17_pi/
+**/computer_side/in/*.bin
+**/computer_side/out/*.bin
+**/computer_side/out/*challenge*.json
+**/computer_side/out/ta_revocation_list.json
+**/*.backup_*
+**/broadcast_log.jsonl.bak
+**/*_quicktest.csv
+**/*_quicktest.json
+**/*_quicktest.tex
+**/pi_side/results_final_protocol_*
+
+# Local analysis scratch trees and duplicate working copies.
+/pi_side/
+/tmp/
 
 # Secrets -- never commit these, matching this codebase's own
 # *_DO_NOT_SHARE.json naming convention

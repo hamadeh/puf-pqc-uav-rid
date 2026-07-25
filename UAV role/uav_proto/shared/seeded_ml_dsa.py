@@ -28,6 +28,7 @@ third-party dependency.
 import ctypes
 import hashlib
 import os
+import threading
 
 import oqs
 
@@ -64,6 +65,7 @@ _RANDOMBYTES_CB = ctypes.CFUNCTYPE(None, ctypes.POINTER(ctypes.c_uint8), ctypes.
 # can be garbage collected out from under the C library if nothing in
 # Python still references them, this dict is that reference.
 _callback_keepalive = {}
+_rng_override_lock = threading.Lock()
 
 
 class _DeterministicStream:
@@ -91,21 +93,26 @@ def seeded_keygen(alg_name: str, seed: bytes) -> tuple[bytes, bytes]:
     Restores the system RNG before returning, so this has no effect on any
     other randomness used elsewhere in the process.
     """
-    stream = _DeterministicStream(seed)
+    # liboqs exposes the randombytes provider as process-global state.
+    # Serialize this short override so concurrent authentication requests
+    # cannot consume each other's deterministic stream or leave another
+    # operation using the wrong provider.
+    with _rng_override_lock:
+        stream = _DeterministicStream(seed)
 
-    def _callback(buf_ptr, buf_len):
-        data = stream.next_bytes(buf_len)
-        ctypes.memmove(buf_ptr, data, buf_len)
+        def _callback(buf_ptr, buf_len):
+            data = stream.next_bytes(buf_len)
+            ctypes.memmove(buf_ptr, data, buf_len)
 
-    cb = _RANDOMBYTES_CB(_callback)
-    _callback_keepalive["current"] = cb
+        cb = _RANDOMBYTES_CB(_callback)
+        _callback_keepalive["current"] = cb
 
-    _liboqs.OQS_randombytes_custom_algorithm(cb)
-    try:
-        with oqs.Signature(alg_name) as signer:
-            pk = signer.generate_keypair()
-            sk = signer.export_secret_key()
-    finally:
-        _liboqs.OQS_randombytes_switch_algorithm(b"system")
+        _liboqs.OQS_randombytes_custom_algorithm(cb)
+        try:
+            with oqs.Signature(alg_name) as signer:
+                pk = signer.generate_keypair()
+                sk = signer.export_secret_key()
+        finally:
+            _liboqs.OQS_randombytes_switch_algorithm(b"system")
 
     return pk, sk

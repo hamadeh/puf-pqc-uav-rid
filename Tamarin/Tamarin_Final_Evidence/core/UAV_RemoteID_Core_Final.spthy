@@ -1,0 +1,344 @@
+theory UAV_RemoteID_Core_Final
+
+begin
+
+builtins: signing, asymmetric-encryption, symmetric-encryption, hashing
+
+/*
+ * Compact core model for unified pseudonymous on-demand
+ * authentication in UAV Remote Identification.
+ *
+ * Explicitly represented:
+ *   - a TA-certified verifier and a TA-authorized UAV Merkle root;
+ *   - a signed verifier request containing an ephemeral KEM key,
+ *     AuthRef, nonce, timestamp, scope, and revocation version;
+ *   - ReqID derived from the complete canonical request;
+ *   - UAV replay admission and verifier outstanding-request consumption;
+ *   - a PUF-derived UAV signing key represented as a stable secret;
+ *   - one ordered two-leaf Merkle tree with explicit leaf indices;
+ *   - a KEM-derived session key and encrypted response payload;
+ *   - a response transcript binding AuthRef, PID, index, RootID,
+ *     request/response timestamps, nonce, and KEM ciphertext;
+ *   - passive storage disclosure and active UAV capture.
+ *
+ * Revocation-state transitions are analyzed in a separate bounded theory.
+ * PUF entropy, BCH reliability, time arithmetic, parser correctness,
+ * physical-origin binding, relay resistance, and availability are outside
+ * this symbolic abstraction.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Trusted setup and one authorized ordered two-leaf Merkle tree      */
+/* ------------------------------------------------------------------ */
+
+rule Setup:
+  let pkTA      = pk(~skTA)
+      pkV       = pk(~skV)
+      scope     = 'scope-authorized'
+      version   = 'v0'
+
+      certBody  = <'VERIFIER-CERT-v1',$V,pkV,scope>
+      certSig   = sign(certBody,~skTA)
+      certV     = <certBody,certSig>
+      certID    = h(certV)
+
+      skD       = h(<'PUF-SIGN',~master,~ctxD>)
+      pkD       = pk(skD)
+      keyID     = h(pkD)
+
+      pid0      = h(<'RID',~seed,'0'>)
+      pid1      = h(<'RID',~seed,'1'>)
+      leaf0     = h(<'LEAF',pid0,'0'>)
+      leaf1     = h(<'LEAF',pid1,'1'>)
+      root      = h(<'NODE',leaf0,leaf1>)
+
+      authBody  = <'ROOT-AUTH-v1',pkD,root,scope,version>
+      authSig   = sign(authBody,~skTA)
+      authRec   = <authBody,authSig>
+      rootID    = h(authRec)
+  in
+  [ Fr(~skTA), Fr(~skV), Fr(~master), Fr(~ctxD), Fr(~seed) ]
+  --[ SetupDone($D,$V,rootID,root),
+      LeafAuthorized($D,rootID,root,pid0,'0'),
+      LeafAuthorized($D,rootID,root,pid1,'1') ]->
+  [ !TAPub(pkTA),
+    !VerifierKey($V,~skV),
+    !VerifierCert($V,pkV,scope,certID,certBody,certSig),
+    !UAVKey($D,skD,pkD,keyID),
+    !RootAuthorization($D,rootID,root,pkD,scope,version,authBody,authSig),
+    !VerifierDB($V,$D,rootID,root,pkD,scope,version,authBody,authSig),
+
+    !LeafPath($D,rootID,root,pid0,'0',leaf1,'P0'),
+    !LeafPath($D,rootID,root,pid1,'1',leaf0,'P1'),
+    !Slot($D,rootID,pid0,'0','ts0'),
+    !Slot($D,rootID,pid1,'1','ts1'),
+
+    !FlashImage($D,rootID,root,pkD,scope,version,authBody,authSig),
+    Out(pkTA), Out(certV) ]
+
+rule Broadcast:
+  [ !Slot($D,rootID,pid,idx,tsV) ]
+  --[ Broadcasted($D,rootID,pid,idx,tsV) ]->
+  [ Out(pid) ]
+
+/* ------------------------------------------------------------------ */
+/* Signed verifier request and linear replay/outstanding state         */
+/* ------------------------------------------------------------------ */
+
+rule Verifier_Request:
+  let certV   = <certBody,certSig>
+      ekV     = pk(~dkV)
+      version = 'v0'
+      req     = <'RID-VERIFIER-REQUEST-v1',
+                 certV,ekV,authRef,~nv,tsV,scope,version>
+      reqID   = h(<'ReqID-v1',req>)
+      sigV    = sign(req,~skV)
+  in
+  [ !VerifierKey($V,~skV),
+    !VerifierCert($V,pkV,scope,certID,certBody,certSig),
+    !Slot($D,rootID,authRef,idx,tsV),
+    In(authRef), Fr(~dkV), Fr(~nv) ]
+  --[ RequestSent($V,$D,rootID,authRef,idx,~nv,reqID,
+                  tsV,scope,version) ]->
+  [ ReplayToken($D,certID,authRef,reqID),
+    OutstandingRequest($V,$D,rootID,authRef,idx,~nv,reqID,
+                       req,~dkV,tsV,scope,version),
+    Out(<req,sigV>) ]
+
+/* ------------------------------------------------------------------ */
+/* UAV validation, admission, and protected response                   */
+/* ------------------------------------------------------------------ */
+
+rule UAV_Response:
+  let certV   = <certBody,certSig>
+      version = 'v0'
+      req     = <'RID-VERIFIER-REQUEST-v1',
+                 certV,ekV,authRef,nv,tsV,scope,version>
+      reqID   = h(<'ReqID-v1',req>)
+      ct      = aenc(~ss,ekV)
+      ksess   = h(<'RID-Auth-v1',~ss,reqID,h(req)>)
+      th      = h(<'RID-UAV-RESPONSE-v1',
+                   reqID,authRef,pid,idx,rootID,nv,tsV,~tsD,ct>)
+      sigD    = sign(th,skD)
+      payload = <authRef,pid,idx,sibling,pos,rootID,~tsD,sigD>
+      resp    = <reqID,ct,senc(payload,ksess)>
+  in
+  [ ReplayToken($D,certID,authRef,reqID),
+    !TAPub(pkTA),
+    !VerifierCert($V,pkV,scope,certID,certBody,certSig),
+    !UAVKey($D,skD,pkD,keyID),
+    !RootAuthorization($D,rootID,root,pkD,scope,version,
+                       authBody,authSig),
+    !LeafPath($D,rootID,root,pid,idx,sibling,pos),
+    In(<req,sigV>), Fr(~ss), Fr(~tsD) ]
+  --[ Eq(verify(certSig,certBody,pkTA),true),
+      Eq(verify(sigV,req,pkV),true),
+      Eq(authRef,pid),
+      RequestAuthenticated($V,$D,rootID,authRef,pid,idx,nv,
+                           reqID,tsV,scope,version),
+      ReplayConsumed($D,certID,authRef,reqID),
+      UAVRunning($D,$V,rootID,root,authRef,pid,idx,nv,reqID,
+                 tsV,~tsD,ct,th,scope,version),
+      SessionKeyClaim($V,$D,reqID,ksess) ]->
+  [ Out(resp) ]
+
+/* ------------------------------------------------------------------ */
+/* Verifier acceptance: left-child leaf                               */
+/* ------------------------------------------------------------------ */
+
+rule Verifier_Accept_P0:
+  let version  = 'v0'
+      ss       = adec(ct,dkV)
+      ksess    = h(<'RID-Auth-v1',ss,reqID,h(req)>)
+      leaf     = h(<'LEAF',pid,'0'>)
+      root2    = h(<'NODE',leaf,sibling>)
+      th       = h(<'RID-UAV-RESPONSE-v1',
+                   reqID,authRef,pid,'0',rootID,nv,tsV,tsD,ct>)
+      authBody = <'ROOT-AUTH-v1',pkD,root,scope,version>
+  in
+  [ OutstandingRequest($V,$D,rootID,authRef,'0',nv,reqID,
+                       req,dkV,tsV,scope,version),
+    !TAPub(pkTA),
+    !VerifierDB($V,$D,rootID,root,pkD,scope,version,
+                authBody,authSig),
+    In(<reqID,ct,
+        senc(<authRef,pid,'0',sibling,'P0',rootID,tsD,sigD>,
+             ksess)>) ]
+  --[ Eq(authRef,pid),
+      Eq(rootID,h(<authBody,authSig>)),
+      Eq(root2,root),
+      Eq(verify(authSig,authBody,pkTA),true),
+      Eq(verify(sigD,th,pkD),true),
+      VerifierCommit($V,$D,rootID,root,authRef,pid,'0',nv,
+                     reqID,tsV,tsD,ct,th,scope,version) ]->
+  [ ]
+
+/* ------------------------------------------------------------------ */
+/* Verifier acceptance: right-child leaf                              */
+/* ------------------------------------------------------------------ */
+
+rule Verifier_Accept_P1:
+  let version  = 'v0'
+      ss       = adec(ct,dkV)
+      ksess    = h(<'RID-Auth-v1',ss,reqID,h(req)>)
+      leaf     = h(<'LEAF',pid,'1'>)
+      root2    = h(<'NODE',sibling,leaf>)
+      th       = h(<'RID-UAV-RESPONSE-v1',
+                   reqID,authRef,pid,'1',rootID,nv,tsV,tsD,ct>)
+      authBody = <'ROOT-AUTH-v1',pkD,root,scope,version>
+  in
+  [ OutstandingRequest($V,$D,rootID,authRef,'1',nv,reqID,
+                       req,dkV,tsV,scope,version),
+    !TAPub(pkTA),
+    !VerifierDB($V,$D,rootID,root,pkD,scope,version,
+                authBody,authSig),
+    In(<reqID,ct,
+        senc(<authRef,pid,'1',sibling,'P1',rootID,tsD,sigD>,
+             ksess)>) ]
+  --[ Eq(authRef,pid),
+      Eq(rootID,h(<authBody,authSig>)),
+      Eq(root2,root),
+      Eq(verify(authSig,authBody,pkTA),true),
+      Eq(verify(sigD,th,pkD),true),
+      VerifierCommit($V,$D,rootID,root,authRef,pid,'1',nv,
+                     reqID,tsV,tsD,ct,th,scope,version) ]->
+  [ ]
+
+/* ------------------------------------------------------------------ */
+/* Compromise abstractions                                             */
+/* ------------------------------------------------------------------ */
+
+rule Reveal_Passive_Storage:
+  [ !FlashImage($D,rootID,root,pkD,scope,version,authBody,authSig) ]
+  --[ FlashDisclosure($D,rootID) ]->
+  [ Out(<rootID,root,pkD,scope,version,authBody,authSig>) ]
+
+rule Active_Capture:
+  [ !UAVKey($D,skD,pkD,keyID),
+    !LeafPath($D,rootID,root,pid0,'0',sib0,'P0'),
+    !LeafPath($D,rootID,root,pid1,'1',sib1,'P1') ]
+  --[ ActiveCapture($D) ]->
+  [ Out(<skD,rootID,root,pid0,sib0,pid1,sib1>) ]
+
+restriction Equality:
+  "All x y #i. Eq(x,y) @ #i ==> x = y"
+
+/* ================================================================== */
+/* Core trace properties                                               */
+/* ================================================================== */
+
+lemma commit_reachable:
+  exists-trace
+  "Ex V D rootID root authRef pid idx nv reqID
+      tsV tsD ct th scope version #i.
+      VerifierCommit(V,D,rootID,root,authRef,pid,idx,nv,
+                     reqID,tsV,tsD,ct,th,scope,version) @ #i"
+
+lemma two_distinct_sessions_reachable:
+  exists-trace
+  "Ex V D rootID root
+      authRef0 authRef1 pid0 pid1 nv0 nv1 req0 req1
+      tsV0 tsV1 tsD0 tsD1 ct0 ct1 th0 th1
+      scope version #i #j.
+      VerifierCommit(V,D,rootID,root,authRef0,pid0,'0',nv0,
+                     req0,tsV0,tsD0,ct0,th0,scope,version) @ #i
+    & VerifierCommit(V,D,rootID,root,authRef1,pid1,'1',nv1,
+                     req1,tsV1,tsD1,ct1,th1,scope,version) @ #j
+    & not (req0 = req1)"
+
+lemma request_authentication:
+  "All V D rootID authRef pid idx nv reqID tsV scope version #i.
+      RequestAuthenticated(V,D,rootID,authRef,pid,idx,nv,
+                           reqID,tsV,scope,version) @ #i
+      ==>
+      Ex #j.
+        RequestSent(V,D,rootID,authRef,idx,nv,reqID,
+                    tsV,scope,version) @ #j
+      & #j < #i"
+
+lemma replay_request_injective:
+  "All V1 V2 D root1 root2 authRef1 authRef2 pid1 pid2
+       idx1 idx2 nv1 nv2 reqID ts1 ts2 scope1 scope2
+       version1 version2 #i #j.
+      RequestAuthenticated(V1,D,root1,authRef1,pid1,idx1,nv1,
+                           reqID,ts1,scope1,version1) @ #i
+    & RequestAuthenticated(V2,D,root2,authRef2,pid2,idx2,nv2,
+                           reqID,ts2,scope2,version2) @ #j
+      ==> #i = #j"
+
+lemma authentication_noninjective_agreement:
+  "All V D rootID root authRef pid idx nv reqID
+       tsV tsD ct th scope version #i.
+      VerifierCommit(V,D,rootID,root,authRef,pid,idx,nv,
+                     reqID,tsV,tsD,ct,th,scope,version) @ #i
+    & not (Ex #c. ActiveCapture(D) @ #c & #c < #i)
+      ==>
+      Ex #j.
+        UAVRunning(D,V,rootID,root,authRef,pid,idx,nv,
+                   reqID,tsV,tsD,ct,th,scope,version) @ #j
+      & #j < #i"
+
+lemma authentication_injective_agreement:
+  "All V D rootID root authRef pid idx nv reqID
+       tsV tsD ct th scope version #i.
+      VerifierCommit(V,D,rootID,root,authRef,pid,idx,nv,
+                     reqID,tsV,tsD,ct,th,scope,version) @ #i
+    & not (Ex #c. ActiveCapture(D) @ #c & #c < #i)
+      ==>
+      (Ex #j.
+         UAVRunning(D,V,rootID,root,authRef,pid,idx,nv,
+                    reqID,tsV,tsD,ct,th,scope,version) @ #j
+       & #j < #i)
+    & not
+      (Ex V2 D2 rootID2 root2 authRef2 pid2 idx2 nv2
+          tsV2 tsD2 ct2 th2 scope2 version2 #i2.
+         VerifierCommit(V2,D2,rootID2,root2,authRef2,pid2,
+                        idx2,nv2,reqID,tsV2,tsD2,ct2,th2,
+                        scope2,version2) @ #i2
+       & not (#i2 = #i))"
+
+lemma commit_binds_authorized_leaf_and_index:
+  "All V D rootID root authRef pid idx nv reqID
+       tsV tsD ct th scope version #i.
+      VerifierCommit(V,D,rootID,root,authRef,pid,idx,nv,
+                     reqID,tsV,tsD,ct,th,scope,version) @ #i
+      ==>
+      (Ex #a.
+         LeafAuthorized(D,rootID,root,pid,idx) @ #a
+       & #a < #i)
+    & authRef = pid"
+
+lemma session_key_secrecy:
+  "All V D reqID k #i #j.
+      SessionKeyClaim(V,D,reqID,k) @ #i
+    & K(k) @ #j
+      ==> F"
+
+lemma passive_storage_disclosure_preserves_agreement:
+  "All V D rootID root authRef pid idx nv reqID
+       tsV tsD ct th scope version #i.
+      VerifierCommit(V,D,rootID,root,authRef,pid,idx,nv,
+                     reqID,tsV,tsD,ct,th,scope,version) @ #i
+    & (Ex #f. FlashDisclosure(D,rootID) @ #f & #f < #i)
+    & not (Ex #c. ActiveCapture(D) @ #c & #c < #i)
+      ==>
+      Ex #j.
+        UAVRunning(D,V,rootID,root,authRef,pid,idx,nv,
+                   reqID,tsV,tsD,ct,th,scope,version) @ #j
+      & #j < #i"
+
+/* Negative control: active UAV capture permits impersonation. */
+lemma active_capture_impersonation_reachable:
+  exists-trace
+  "Ex V D rootID root authRef pid idx nv reqID
+      tsV tsD ct th scope version #c #i.
+      ActiveCapture(D) @ #c
+    & VerifierCommit(V,D,rootID,root,authRef,pid,idx,nv,
+                     reqID,tsV,tsD,ct,th,scope,version) @ #i
+    & #c < #i
+    & not
+      (Ex #r.
+         UAVRunning(D,V,rootID,root,authRef,pid,idx,nv,
+                    reqID,tsV,tsD,ct,th,scope,version) @ #r)"
+
+end

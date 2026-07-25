@@ -1,0 +1,16 @@
+{
+  "host": "192.168.1.51",
+  "port": 40444,
+  "n": 16384,
+  "warmup_trials": 1,
+  "recorded_trials": 30,
+  "successful_trials": 30,
+  "cryptographically_accepted_trials": 30,
+  "failed_trials": 0,
+  "application_failure_rate": 0.0,
+  "mean_rtt_ms": 33.89803023333333,
+  "std_rtt_ms": 25.511737717138807,
+  "mean_pi_processing_ms": 16.6191997,
+  "std_pi_processing_ms": 2.26584158747598,
+  "note": "Byte counts are TCP application bytes including this harness's framing; capture packets separately to report IP/TCP packet counts or link-layer loss."
+}

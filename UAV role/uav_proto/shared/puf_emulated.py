@@ -52,6 +52,7 @@ enrollment run before looking anywhere else.
 """
 
 import json
+import hashlib
 import os
 import secrets
 
@@ -150,6 +151,25 @@ def acquire_response_reads(challenges: list, reads_per_challenge: int = 9,
     if new_challenges:
         _save_store()
     return reads
+
+
+def enrollment_margins(challenges: list) -> list[float]:
+    """
+    Deterministic synthetic normalized margins for software-path testing.
+
+    These values are not LTspice results and are not physical measurements.
+    They merely make the emulator expose the margin-bearing enrollment API
+    required by the top-950 selection rule.  Every generated margin is above
+    the 0.5% enrollment threshold; ordering is deterministic per challenge.
+    """
+    margins = []
+    for challenge in challenges:
+        digest = hashlib.sha256(
+            b"PUF-EMULATED-MARGIN-v1" + int(challenge).to_bytes(2, "big")
+        ).digest()
+        fraction = int.from_bytes(digest[:8], "big") / (1 << 64)
+        margins.append(0.006 + 0.044 * fraction)
+    return margins
 
 
 def reset_store() -> None:

@@ -1,180 +1,138 @@
-"""
-uav_phase2_enroll_request.py
+"""Create initial-enrollment or renewal root requests with UAV PoP."""
 
-Runs on: the Pi 5 (UAV role, D_i).
-Implements: Algorithm 1 (UAV Enrollment and Merkle-Root Authorization),
-the UAV-side steps up through sending RootReq_i^(k) to the TA, for each
-of the m root windows.
-
-BEFORE RUNNING: copy ta_public_params.json from the computer's
-computer_side/out/ to this script's in/ directory (see README for the
-exact path). This file is Phase 1's output and this script needs PK_TA's
-companion Params (n, m, algorithm names) from it to stay consistent with
-the TA.
-
-Produces: out/uav_root_requests.json, containing one RootReq_i^(k) per
-root window. Copy this file to the computer's computer_side/in/ directory
-next, then run ta_phase2_enroll_process.py there.
-
-ALIGNED WITH ALGORITHM 1: response acquisition now runs the paper's
-actual pipeline (ChallengeSchedule -> MajorityPUF(9 reads) -> FE.Gen
-over BCH(1023,943,17) -> seeded 256-bit Toeplitz extraction, via
-fuzzy_extractor.gen_from_seed()) instead of a single noiseless
-puf_response() call. This codebase keeps its established dual-channel
-design (one independent seed/FE.Gen for S1, another for S2) rather than
-the paper's single-K_PUF + SHAKE256 split -- CSeed1 and CSeed2 replace
-the previous raw challenge tokens C1/C2 (the schedule, not one
-challenge, is what needs to be reproducible from the seed at
-reconstruction time). PID_kj now includes FlightCtx_k in its hash input
-(Algorithm 1 line 17: PID_kj = Trunc128(H256("RID" || X_kj || j ||
-RootNonce_k || FlightCtx_k)); this was previously omitted). Leaves use
-merkle.leaf_hash() (H384/TupleHash, Eq. 13) instead of the old
-H256-based construction. RootReq_i^(k) no longer carries HD1/HD2/
-CSeed1/CSeed2 -- Eq. (21) doesn't include them (the TA never reads
-them; verified against ta_phase2_enroll_process.py, which only reads
-k/pk_i/mr_k/root_nonce/flight_ctx from the request).
-
-ML-DSA keygen is seeded/deterministic (see seeded_ml_dsa.py): the same
-seed_i^sig will regenerate the identical (PK_i, SK_i) later, which is
-what Algorithm 6's key-confirmation check depends on.
-"""
-
-import sys
+import argparse
 import os
 import secrets
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
-sys.path.insert(0, os.path.dirname(__file__))
-
-import protocol_common as pc
-import crypto_primitives as cp
-import merkle
-import fuzzy_extractor
-import seeded_ml_dsa
 
 import oqs
 
-IN_DIR = os.path.join(os.path.dirname(__file__), "in")
-OUT_DIR = os.path.join(os.path.dirname(__file__), "out")
+import crypto_primitives as cp
+import fuzzy_extractor
+import merkle
+import protocol_common as pc
+import protocol_messages as pm
+import puf_emulated
+import seeded_ml_dsa
 
-UAV_CTX = b"uav-001"  # ctx_i: identifies this UAV in the KDF domain separation
-SEED_BYTES = 32
+BASE = os.path.dirname(__file__)
+IN_DIR = os.path.join(BASE, "in")
+OUT_DIR = os.path.join(BASE, "out")
+UAV_ID = "uav-001"
+UAV_CTX = b"uav-001"
 
 
-def main():
-    ta_params_path = os.path.join(IN_DIR, "ta_public_params.json")
-    if not os.path.exists(ta_params_path):
-        print(f"ERROR: {ta_params_path} not found.")
-        print("Copy ta_public_params.json from the computer's "
-              "computer_side/out/ into this script's in/ directory first.")
-        sys.exit(1)
+def _root(S2: bytes, root_nonce: bytes, ctx_wire: bytes) -> tuple[bytes, list]:
+    ctx = pm.decode_flight_ctx(ctx_wire)
+    seed_k = pc.kdf_labeled(
+        pc.TAG_MERKLE_ROOT, S2, root_nonce, pc.u32(ctx["k"])
+    )
+    leaves = []
+    for j in range(1, ctx["n"] + 1):
+        x_kj = pc.kdf_labeled(pc.TAG_INTERVAL_SECRET, seed_k, pc.u32(j))
+        pid = pc.hash_labeled(
+            pc.TAG_RID, x_kj, pc.u32(j), root_nonce, ctx_wire
+        )[:16]
+        leaves.append(merkle.leaf_hash(pid, j, root_nonce, ctx_wire))
+    levels = merkle.build_tree(leaves)
+    return merkle.root(levels), levels
 
-    ta_params = pc.read_message(ta_params_path)
-    n = ta_params["n_intervals"]
-    m = ta_params["m_roots"]
-    ml_dsa_alg = ta_params["ml_dsa_alg"]
 
-    print(f"Phase 2: UAV Enrollment (Algorithm 1), UAV side")
-    print(f"Using TA params: n={n} intervals, m={m} roots, alg={ml_dsa_alg}")
-
-    import puf_emulated
-    puf_emulated.reset_store()  # fresh "device" for this run
-
-    # --- Extract hardware secrets (Algorithm 1 lines 1-3, run twice: one
-    # channel for S1, one for S2, per this codebase's dual-challenge design) ---
-    c_seed1 = secrets.token_bytes(SEED_BYTES)
-    c_seed2 = secrets.token_bytes(SEED_BYTES)
-    S1, HD1 = fuzzy_extractor.gen_from_seed(c_seed1)
-    S2, HD2 = fuzzy_extractor.gen_from_seed(c_seed2)
-    print("PUF secrets extracted (ChallengeSchedule -> MajorityPUF -> "
-          "FE.Gen[BCH(1023,943,17)] -> Toeplitz-256), helper data generated.")
-
-    # --- Derive signing identity (lines 4-7) ---
-    seed_sig = cp.kdf(S1, pc.TAG_ML_DSA, UAV_CTX)
-    PK_i, SK_i = seeded_ml_dsa.seeded_keygen(ml_dsa_alg, seed_sig)
-    KC_i = cp.hash_bytes(PK_i)
-    print(f"Signing key derived (seeded, deterministic): PK_i is {len(PK_i)} bytes, KC_i computed.")
-
-    # --- Build m Merkle-root windows (lines 8-19) ---
-    root_requests = []
-    root_material_for_finalize = []  # kept locally, not sent to TA
-
-    for k in range(m):
-        root_nonce = secrets.token_bytes(16)
-        flight_ctx = {
-            "k": k,
-            "delta_t": ta_params["delta_t_seconds"],
-            "n": n,
-            "validity": {"start": "2026-01-01T00:00:00Z", "end": "2026-12-31T23:59:59Z",
-                         "max_intervals": n, "region": "TEST-REGION"},
-            "scope": "test-deployment",
-        }
-        flight_ctx_bytes = pc.canonical_json_bytes(flight_ctx)
-        seed_k = cp.kdf(S2, root_nonce, k.to_bytes(4, "big"), pc.TAG_MERKLE_ROOT)
-
-        leaves = []
-        for j in range(n):
-            j_bytes = j.to_bytes(4, "big")
-            x_kj = cp.kdf(seed_k, j_bytes, pc.TAG_INTERVAL_SECRET)
-            pid_kj = cp.hash_bytes(
-                pc.TAG_RID + x_kj + j_bytes + root_nonce + flight_ctx_bytes
-            )[:16]
-            leaf = merkle.leaf_hash(pid_kj, j, root_nonce, flight_ctx_bytes)
-            leaves.append(leaf)
-
-        levels = merkle.build_tree(leaves)
-        mr_k = merkle.root(levels)
-
-        # RootReq_i^(k), Eq. (21): {PK_i, MR_i^(k), RootNonce_k, FlightCtx_k,
-        # Validity_k, Scope_k}. Validity_k/Scope_k already live nested inside
-        # FlightCtx_k in this codebase's established simplification (see
-        # ta_phase2_enroll_process.py), so they're bound in via
-        # flight_ctx's own canonical bytes, not sent as separate fields.
-        root_requests.append({
-            "k": k,
-            "pk_i": PK_i,
-            "mr_k": mr_k,
-            "root_nonce": root_nonce,
-            "flight_ctx": flight_ctx,
-        })
-
-        # kept on the UAV, not sent, needed later to finalize local storage
-        root_material_for_finalize.append({
-            "k": k,
-            "root_nonce": root_nonce,
-            "flight_ctx": flight_ctx,
-            "mr_k": mr_k,
-        })
-
-        print(f"  Root window k={k}: MR_i^(k) = {mr_k.hex()[:16]}... built from {n} intervals")
-
-    # --- Write the outgoing request (to be copied to the TA machine) ---
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--renew", action="store_true")
+    parser.add_argument("--new-emulated-device", action="store_true")
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
+    params_path = os.path.join(IN_DIR, "ta_public_params.json")
+    challenge_path = os.path.join(IN_DIR, "ta_uav_root_challenges.json")
+    store_path = os.path.join(OUT_DIR, "uav_store_nv.json")
+    pending_path = os.path.join(OUT_DIR, "uav_local_pending_DO_NOT_SHARE.json")
     outgoing_path = os.path.join(OUT_DIR, "uav_root_requests.json")
+    for path in (params_path, challenge_path):
+        if not os.path.exists(path):
+            raise SystemExit(f"Missing {path}")
+    existing_outputs = [
+        path for path in (pending_path, outgoing_path) if os.path.exists(path)
+    ]
+    if existing_outputs and not args.force:
+        raise SystemExit(
+            "Refusing to overwrite existing enrollment output; use --force "
+            "after preserving it."
+        )
+    if args.new_emulated_device:
+        if args.renew:
+            parser.error("--new-emulated-device cannot be used for renewal")
+        puf_emulated.reset_store()
+
+    params = pc.read_message(params_path)
+    challenges = pc.read_message(challenge_path)
+    if challenges["uav_id"] != UAV_ID:
+        raise SystemExit("TA challenge is for a different UAV")
+
+    if args.renew:
+        if not os.path.exists(store_path):
+            raise SystemExit("--renew requires an existing uav_store_nv.json")
+        old_store = pc.read_message(store_path)
+        c_seed = old_store["c_seed"]
+        helper = old_store["helper_data"]
+        k_puf = fuzzy_extractor.rec_from_seed(c_seed, helper)
+        if k_puf is None:
+            raise SystemExit("PUF reconstruction failed")
+        expected_kc = old_store["kc_i"]
+    else:
+        if os.path.exists(store_path) and not args.force:
+            raise SystemExit(
+                "Existing enrollment found; use --renew or explicitly --force."
+            )
+        c_seed = secrets.token_bytes(32)
+        k_puf, helper = fuzzy_extractor.gen_from_seed(c_seed)
+        expected_kc = None
+
+    S1, S2 = pc.derive_purpose_secrets(k_puf, UAV_CTX)
+    pk_i, sk_i = seeded_ml_dsa.seeded_keygen(params["ml_dsa_alg"], S1)
+    kc_i = cp.hash_bytes(pk_i)
+    if expected_kc is not None and kc_i != expected_kc:
+        raise SystemExit("renewal key-confirmation check failed")
+
+    request_items = []
+    pending_roots = []
+    with oqs.Signature(params["ml_dsa_alg"], sk_i) as signer:
+        for challenge in challenges["challenges"]:
+            ctx_wire = challenge["flight_ctx_wire"]
+            ctx = pm.decode_flight_ctx(ctx_wire)
+            if ctx["n"] != params["n_intervals"]:
+                raise ValueError("TA challenge n disagrees with public parameters")
+            while True:
+                root_nonce = secrets.token_bytes(16)
+                mr_k, _ = _root(S2, root_nonce, ctx_wire)
+                if all(r["mr_k"] != mr_k for r in pending_roots):
+                    break
+            body = pm.encode_root_request(
+                pk_i, mr_k, root_nonce, ctx_wire, challenge["n_ta"]
+            )
+            request_items.append({"body": body, "pop": signer.sign(body)})
+            pending_roots.append({
+                "mr_k": mr_k, "root_nonce": root_nonce,
+                "flight_ctx_wire": ctx_wire,
+            })
+            print(f"Prepared k={ctx['k']}, n={ctx['n']}, root={mr_k.hex()[:16]}...")
+
     pc.write_message(outgoing_path, {
-        "uav_ctx": UAV_CTX,
-        "requests": root_requests,
+        "protocol_version": pc.PROTOCOL_VERSION,
+        "uav_id": UAV_ID, "requests": request_items,
     })
-    print(f"\nWrote root requests: {outgoing_path}")
-
-    # --- Write local-only state needed to finalize after TA responds ---
-    # NOT copied anywhere; this stays on the Pi. Includes SK_i, only for
-    # this prototype run, see the seeded-keygen limitation in the docstring.
-    local_state_path = os.path.join(OUT_DIR, "uav_local_pending_DO_NOT_SHARE.json")
-    pc.write_message(local_state_path, {
-        "sk_i": SK_i,
-        "pk_i": PK_i,
-        "kc_i": KC_i,
-        "c_seed1": c_seed1,
-        "c_seed2": c_seed2,
-        "hd1": HD1,
-        "hd2": HD2,
-        "roots": root_material_for_finalize,
+    # No SK_i, K_PUF, S1, S2, Seed_k, or interval secrets are persisted.
+    pc.write_message(pending_path, {
+        "renewal": args.renew,
+        "replace_existing": bool(args.force and not args.renew),
+        "c_seed": c_seed, "helper_data": helper,
+        "kc_i": kc_i, "pk_i": pk_i, "roots": pending_roots,
     })
-    print(f"Wrote local pending state (do not copy): {local_state_path}")
-
-    print(f"\nNext step: copy {os.path.basename(outgoing_path)} to the "
-          f"computer's computer_side/in/ directory, then run "
-          f"ta_phase2_enroll_process.py there.")
+    print(f"Wrote requests: {outgoing_path}")
+    print(f"Wrote non-secret finalize state: {pending_path}")
 
 
 if __name__ == "__main__":

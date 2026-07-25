@@ -12,7 +12,7 @@ position without detection by the hash alone. The paper's construction
 closes exactly that gap:
 
   Leaf:          L_kj    = H384(0x00, Enc(PID_kj, j, RootNonce_k, FlightCtx_k))     Eq. (13)
-  Internal node: P_{l,r} = H384("node", l, r, P_{l-1,2r}, P_{l-1,2r+1})              Eq. (19)
+  Internal node: P_{l,r} = H384(0x01, l, r, P_{l-1,2r}, P_{l-1,2r+1})                Eq. (19)
 
 using the 384-bit collision-sensitive TupleHash (tuple_hash256.py), not
 the 256-bit general-purpose H256 crypto_primitives.hash_bytes()
@@ -24,7 +24,7 @@ leaf and internal-node tags prevent cross-type substitution."
 from tuple_hash256 import tuple_hash256
 
 _LEAF_MARKER = b"\x00"
-_TAG_NODE = b"node"
+_NODE_MARKER = b"\x01"
 
 
 def leaf_hash(pid: bytes, j: int, root_nonce: bytes, flight_ctx_bytes: bytes) -> bytes:
@@ -39,21 +39,23 @@ def leaf_hash(pid: bytes, j: int, root_nonce: bytes, flight_ctx_bytes: bytes) ->
 
 def node_hash(level: int, position: int, left: bytes, right: bytes) -> bytes:
     """P_{l,r}, Eq. (19): ordered pair of children, level and position bound in."""
-    return tuple_hash256(_TAG_NODE, level.to_bytes(4, "big"), position.to_bytes(4, "big"), left, right)
+    return tuple_hash256(
+        _NODE_MARKER, level.to_bytes(4, "big"),
+        position.to_bytes(4, "big"), left, right,
+    )
 
 
 def build_tree(leaves: list[bytes]) -> list[list[bytes]]:
     """
     Returns the full tree as a list of levels: levels[0] is the leaves
-    (each already an L_kj from leaf_hash()), levels[-1] is [root]. Odd
-    node counts duplicate the last node at that level (unchanged
-    convention from before this rewrite; still worth documenting if you
-    report exact proof sizes, since some Merkle-tree variants handle the
-    odd case differently). Internal nodes are combined via node_hash(),
-    which is where level/position get bound in.
+    (each already an L_kj from leaf_hash()), levels[-1] is [root].
+    Protocol roots require n to be a power of two, making every proof
+    exactly log2(n) entries with no implicit odd-node convention.
     """
     if not leaves:
         raise ValueError("build_tree requires at least one leaf")
+    if len(leaves) & (len(leaves) - 1):
+        raise ValueError("protocol Merkle trees require a power-of-two leaf count")
 
     levels = [list(leaves)]
     current = leaves
@@ -62,7 +64,7 @@ def build_tree(leaves: list[bytes]) -> list[list[bytes]]:
         nxt = []
         for i in range(0, len(current), 2):
             left = current[i]
-            right = current[i + 1] if i + 1 < len(current) else current[i]
+            right = current[i + 1]
             nxt.append(node_hash(level, i // 2, left, right))
         levels.append(nxt)
         current = nxt
@@ -74,20 +76,24 @@ def root(levels: list[list[bytes]]) -> bytes:
     return levels[-1][0]
 
 
-def auth_path(levels: list[list[bytes]], leaf_index: int) -> list[bytes]:
-    """Authentication path (sibling hashes) for the leaf at leaf_index."""
+def auth_path(levels: list[list[bytes]], j: int) -> list[dict]:
+    """Return the direction-bound path for one-based protocol interval j."""
+    if not levels or j < 1 or j > len(levels[0]):
+        raise ValueError("interval index is outside the Merkle tree")
     path = []
-    idx = leaf_index
+    idx = j - 1
     for level in levels[:-1]:
         sibling_idx = idx ^ 1
-        if sibling_idx >= len(level):
-            sibling_idx = idx  # duplicated-last-node case
-        path.append(level[sibling_idx])
+        path.append({
+            "direction": idx & 1,
+            "sibling": level[sibling_idx],
+        })
         idx //= 2
     return path
 
 
-def verify_path(leaf: bytes, leaf_index: int, path: list[bytes], expected_root: bytes) -> bool:
+def verify_path(leaf: bytes, j: int, path: list[dict],
+                expected_root: bytes, n: int) -> bool:
     """
     Recomputes the root from a leaf, its index, and its authentication
     path, using the same node_hash() level/position binding build_tree()
@@ -97,11 +103,23 @@ def verify_path(leaf: bytes, leaf_index: int, path: list[bytes], expected_root: 
     logic, now centralized here so both sides can only ever agree or
     disagree about the SAME construction.
     """
+    if n < 1 or n & (n - 1) or j < 1 or j > n:
+        return False
+    if len(path) != n.bit_length() - 1:
+        return False
     computed = leaf
-    idx = leaf_index
-    for level, sibling in enumerate(path, start=1):
+    idx = j - 1
+    for level, entry in enumerate(path, start=1):
+        if not isinstance(entry, dict) or set(entry) != {"direction", "sibling"}:
+            return False
+        direction = entry["direction"]
+        sibling = entry["sibling"]
+        if direction not in (0, 1) or direction != (idx & 1):
+            return False
+        if not isinstance(sibling, bytes) or len(sibling) != len(leaf):
+            return False
         position = idx // 2
-        if idx % 2 == 0:
+        if direction == 0:
             computed = node_hash(level, position, computed, sibling)
         else:
             computed = node_hash(level, position, sibling, computed)

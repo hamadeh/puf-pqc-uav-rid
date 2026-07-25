@@ -1,0 +1,211 @@
+operation,n,trial,latency_ms
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,1,1.9273939997219713
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,2,1.8220199999632314
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,3,1.9190040002285969
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,4,1.9125049984722864
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,5,1.8670219997147797
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,6,1.8139089988835622
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,7,1.8752440009848215
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,8,1.8630029990163166
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,9,1.9089119996351656
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,10,1.8190389982919442
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,11,1.8481509996490786
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,12,1.8985779988724971
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,13,1.9004860005225055
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,14,1.8333349999011261
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,15,1.874485000371351
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,16,1.8765219992928905
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,17,1.8820220011548372
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,18,1.860243999544764
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,19,1.7958720000024186
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,20,1.9138000006932998
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,21,1.9034490014746552
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,22,1.8537619998824084
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,23,1.841020999563625
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,24,1.8599840004753787
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,25,1.8767069996101782
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,26,1.901763000205392
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,27,1.8202610008302145
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,28,1.8327239995414857
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,29,1.8768190002447227
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",,30,1.9273010002507363
+One Merkle-root generation,1024,1,74.11928299916326
+One Merkle-root generation,1024,2,73.79016500090074
+One Merkle-root generation,1024,3,74.68031400094333
+One Merkle-root generation,1024,4,73.87040699904901
+One Merkle-root generation,1024,5,73.97544699961145
+One Merkle-root generation,1024,6,73.69814400044561
+One Merkle-root generation,1024,7,73.71345999854384
+One Merkle-root generation,1024,8,73.74427400100103
+One Merkle-root generation,1024,9,73.66480699965905
+One Merkle-root generation,1024,10,74.30861700049718
+One Merkle-root generation,1024,11,73.96146100109036
+One Merkle-root generation,1024,12,73.84045899925695
+One Merkle-root generation,1024,13,73.94625699998869
+One Merkle-root generation,1024,14,74.2453189996013
+One Merkle-root generation,1024,15,73.78171700111125
+One Merkle-root generation,1024,16,74.59375300095417
+One Merkle-root generation,1024,17,74.00161099940306
+One Merkle-root generation,1024,18,74.15526200020395
+One Merkle-root generation,1024,19,74.57169699955557
+One Merkle-root generation,1024,20,74.66806899901712
+One Merkle-root generation,1024,21,74.20046600054775
+One Merkle-root generation,1024,22,74.14631400024518
+One Merkle-root generation,1024,23,73.70221199926164
+One Merkle-root generation,1024,24,74.13816500047687
+One Merkle-root generation,1024,25,74.3110949988477
+One Merkle-root generation,1024,26,74.99820299926796
+One Merkle-root generation,1024,27,75.00872099990374
+One Merkle-root generation,1024,28,73.84319599987066
+One Merkle-root generation,1024,29,74.50500699997065
+One Merkle-root generation,1024,30,75.65117899866891
+Pre-flight root activation (Algorithm 3),1024,1,76.68607199957478
+Pre-flight root activation (Algorithm 3),1024,2,76.04883599924506
+Pre-flight root activation (Algorithm 3),1024,3,76.67360900086351
+Pre-flight root activation (Algorithm 3),1024,4,76.14896500126633
+Pre-flight root activation (Algorithm 3),1024,5,76.22781800091616
+Pre-flight root activation (Algorithm 3),1024,6,76.34776499980944
+Pre-flight root activation (Algorithm 3),1024,7,76.72464300048887
+Pre-flight root activation (Algorithm 3),1024,8,76.59095499911928
+Pre-flight root activation (Algorithm 3),1024,9,76.45910099927278
+Pre-flight root activation (Algorithm 3),1024,10,76.76727400030359
+Pre-flight root activation (Algorithm 3),1024,11,76.32319100048335
+Pre-flight root activation (Algorithm 3),1024,12,76.9495549993735
+Pre-flight root activation (Algorithm 3),1024,13,76.97353799994744
+Pre-flight root activation (Algorithm 3),1024,14,77.99987399994279
+Pre-flight root activation (Algorithm 3),1024,15,77.90337200094655
+Pre-flight root activation (Algorithm 3),1024,16,78.31584400082647
+Pre-flight root activation (Algorithm 3),1024,17,76.78914200005238
+Pre-flight root activation (Algorithm 3),1024,18,76.69360200088704
+Pre-flight root activation (Algorithm 3),1024,19,76.78953000140609
+Pre-flight root activation (Algorithm 3),1024,20,77.07627700074227
+Pre-flight root activation (Algorithm 3),1024,21,76.10842300164222
+Pre-flight root activation (Algorithm 3),1024,22,77.16342599997006
+Pre-flight root activation (Algorithm 3),1024,23,77.34115299899713
+Pre-flight root activation (Algorithm 3),1024,24,76.84178999988944
+Pre-flight root activation (Algorithm 3),1024,25,76.97025599918561
+Pre-flight root activation (Algorithm 3),1024,26,76.71984300031909
+Pre-flight root activation (Algorithm 3),1024,27,77.08235099926242
+Pre-flight root activation (Algorithm 3),1024,28,77.77618100044492
+Pre-flight root activation (Algorithm 3),1024,29,77.38300600067305
+Pre-flight root activation (Algorithm 3),1024,30,77.82097500057716
+"On-demand authentication (Algorithms 5+6, UAV)",1024,1,3.928861999156652
+"On-demand authentication (Algorithms 5+6, UAV)",1024,2,4.213164000248071
+"On-demand authentication (Algorithms 5+6, UAV)",1024,3,3.843026999675203
+"On-demand authentication (Algorithms 5+6, UAV)",1024,4,4.6279880007205065
+"On-demand authentication (Algorithms 5+6, UAV)",1024,5,4.200368000965682
+"On-demand authentication (Algorithms 5+6, UAV)",1024,6,4.562115000226186
+"On-demand authentication (Algorithms 5+6, UAV)",1024,7,5.000735998692107
+"On-demand authentication (Algorithms 5+6, UAV)",1024,8,3.9593620003870456
+"On-demand authentication (Algorithms 5+6, UAV)",1024,9,3.9782329986337572
+"On-demand authentication (Algorithms 5+6, UAV)",1024,10,4.182329999821377
+"On-demand authentication (Algorithms 5+6, UAV)",1024,11,3.926788000171655
+"On-demand authentication (Algorithms 5+6, UAV)",1024,12,3.9925669989315793
+"On-demand authentication (Algorithms 5+6, UAV)",1024,13,5.143480000697309
+"On-demand authentication (Algorithms 5+6, UAV)",1024,14,3.9468430004490074
+"On-demand authentication (Algorithms 5+6, UAV)",1024,15,3.976973999670008
+"On-demand authentication (Algorithms 5+6, UAV)",1024,16,4.163218000030611
+"On-demand authentication (Algorithms 5+6, UAV)",1024,17,3.851990000839578
+"On-demand authentication (Algorithms 5+6, UAV)",1024,18,4.1009209999174345
+"On-demand authentication (Algorithms 5+6, UAV)",1024,19,3.7615429992001737
+"On-demand authentication (Algorithms 5+6, UAV)",1024,20,4.507781000938849
+"On-demand authentication (Algorithms 5+6, UAV)",1024,21,4.5386340007098624
+"On-demand authentication (Algorithms 5+6, UAV)",1024,22,3.984696000770782
+"On-demand authentication (Algorithms 5+6, UAV)",1024,23,3.7242090002109762
+"On-demand authentication (Algorithms 5+6, UAV)",1024,24,3.7274690002959687
+"On-demand authentication (Algorithms 5+6, UAV)",1024,25,3.9721029988868395
+"On-demand authentication (Algorithms 5+6, UAV)",1024,26,3.9398980006808415
+"On-demand authentication (Algorithms 5+6, UAV)",1024,27,4.0704200000618584
+"On-demand authentication (Algorithms 5+6, UAV)",1024,28,4.937383000651607
+"On-demand authentication (Algorithms 5+6, UAV)",1024,29,4.911530000754283
+"On-demand authentication (Algorithms 5+6, UAV)",1024,30,4.86697399901459
+One Merkle-root generation,16384,1,1189.786823999384
+One Merkle-root generation,16384,2,1188.821886000369
+One Merkle-root generation,16384,3,1182.1492170001875
+One Merkle-root generation,16384,4,1183.253336999769
+One Merkle-root generation,16384,5,1182.6259790013864
+One Merkle-root generation,16384,6,1185.072021000451
+One Merkle-root generation,16384,7,1184.437555999466
+One Merkle-root generation,16384,8,1178.092137000931
+One Merkle-root generation,16384,9,1180.3553410009044
+One Merkle-root generation,16384,10,1181.3706450011523
+One Merkle-root generation,16384,11,1182.9169829998136
+One Merkle-root generation,16384,12,1181.3987959994847
+One Merkle-root generation,16384,13,1183.5336289987026
+One Merkle-root generation,16384,14,1186.9671550011844
+One Merkle-root generation,16384,15,1183.3797349991073
+One Merkle-root generation,16384,16,1179.917524999837
+One Merkle-root generation,16384,17,1193.589296999562
+One Merkle-root generation,16384,18,1179.563744999541
+One Merkle-root generation,16384,19,1181.2486620001437
+One Merkle-root generation,16384,20,1183.025522999742
+One Merkle-root generation,16384,21,1179.2123960003664
+One Merkle-root generation,16384,22,1181.157577000704
+One Merkle-root generation,16384,23,1180.810953999753
+One Merkle-root generation,16384,24,1181.2516969985154
+One Merkle-root generation,16384,25,1182.4543090006046
+One Merkle-root generation,16384,26,1180.8505429999059
+One Merkle-root generation,16384,27,1185.2788270007295
+One Merkle-root generation,16384,28,1180.259536999074
+One Merkle-root generation,16384,29,1180.752301001121
+One Merkle-root generation,16384,30,1180.5316259997198
+Pre-flight root activation (Algorithm 3),16384,1,1190.9059580011672
+Pre-flight root activation (Algorithm 3),16384,2,1189.719096000772
+Pre-flight root activation (Algorithm 3),16384,3,1189.815241999895
+Pre-flight root activation (Algorithm 3),16384,4,1192.5834019984904
+Pre-flight root activation (Algorithm 3),16384,5,1193.1438330011588
+Pre-flight root activation (Algorithm 3),16384,6,1196.9063550004648
+Pre-flight root activation (Algorithm 3),16384,7,1197.32291299988
+Pre-flight root activation (Algorithm 3),16384,8,1194.6282650005742
+Pre-flight root activation (Algorithm 3),16384,9,1196.996102000412
+Pre-flight root activation (Algorithm 3),16384,10,1196.395176999431
+Pre-flight root activation (Algorithm 3),16384,11,1191.446533999624
+Pre-flight root activation (Algorithm 3),16384,12,1198.2458809998207
+Pre-flight root activation (Algorithm 3),16384,13,1197.718570001598
+Pre-flight root activation (Algorithm 3),16384,14,1201.2644290007302
+Pre-flight root activation (Algorithm 3),16384,15,1204.8226770002657
+Pre-flight root activation (Algorithm 3),16384,16,1202.3930810009915
+Pre-flight root activation (Algorithm 3),16384,17,1200.8128249999572
+Pre-flight root activation (Algorithm 3),16384,18,1201.9646019998618
+Pre-flight root activation (Algorithm 3),16384,19,1207.0102840007166
+Pre-flight root activation (Algorithm 3),16384,20,1205.8310550000897
+Pre-flight root activation (Algorithm 3),16384,21,1202.7538000002096
+Pre-flight root activation (Algorithm 3),16384,22,1212.8117230004136
+Pre-flight root activation (Algorithm 3),16384,23,1212.3388390009495
+Pre-flight root activation (Algorithm 3),16384,24,1220.8662150005694
+Pre-flight root activation (Algorithm 3),16384,25,1248.5186569992948
+Pre-flight root activation (Algorithm 3),16384,26,1221.2734799995815
+Pre-flight root activation (Algorithm 3),16384,27,1235.3590660004556
+Pre-flight root activation (Algorithm 3),16384,28,1235.8835140003066
+Pre-flight root activation (Algorithm 3),16384,29,1220.3605419999803
+Pre-flight root activation (Algorithm 3),16384,30,1230.9261829996103
+"On-demand authentication (Algorithms 5+6, UAV)",16384,1,4.087019000508008
+"On-demand authentication (Algorithms 5+6, UAV)",16384,2,5.40050499876088
+"On-demand authentication (Algorithms 5+6, UAV)",16384,3,3.719567001098767
+"On-demand authentication (Algorithms 5+6, UAV)",16384,4,3.828476999842678
+"On-demand authentication (Algorithms 5+6, UAV)",16384,5,4.212021000057575
+"On-demand authentication (Algorithms 5+6, UAV)",16384,6,4.095667000001413
+"On-demand authentication (Algorithms 5+6, UAV)",16384,7,4.182872000455973
+"On-demand authentication (Algorithms 5+6, UAV)",16384,8,3.9417570005753078
+"On-demand authentication (Algorithms 5+6, UAV)",16384,9,4.4313769994914765
+"On-demand authentication (Algorithms 5+6, UAV)",16384,10,4.19350099946314
+"On-demand authentication (Algorithms 5+6, UAV)",16384,11,3.9961830007086974
+"On-demand authentication (Algorithms 5+6, UAV)",16384,12,4.914737000945024
+"On-demand authentication (Algorithms 5+6, UAV)",16384,13,4.5627300005435245
+"On-demand authentication (Algorithms 5+6, UAV)",16384,14,4.618749999281135
+"On-demand authentication (Algorithms 5+6, UAV)",16384,15,4.321558999436093
+"On-demand authentication (Algorithms 5+6, UAV)",16384,16,4.277965999790467
+"On-demand authentication (Algorithms 5+6, UAV)",16384,17,4.832586999327759
+"On-demand authentication (Algorithms 5+6, UAV)",16384,18,6.089425000027404
+"On-demand authentication (Algorithms 5+6, UAV)",16384,19,4.47982200057595
+"On-demand authentication (Algorithms 5+6, UAV)",16384,20,4.625861000022269
+"On-demand authentication (Algorithms 5+6, UAV)",16384,21,4.742326000268804
+"On-demand authentication (Algorithms 5+6, UAV)",16384,22,5.758363999120775
+"On-demand authentication (Algorithms 5+6, UAV)",16384,23,4.303318000893341
+"On-demand authentication (Algorithms 5+6, UAV)",16384,24,4.55439699908311
+"On-demand authentication (Algorithms 5+6, UAV)",16384,25,4.130538000026718
+"On-demand authentication (Algorithms 5+6, UAV)",16384,26,3.985164001278463
+"On-demand authentication (Algorithms 5+6, UAV)",16384,27,3.8744590001442702
+"On-demand authentication (Algorithms 5+6, UAV)",16384,28,5.057443000623607
+"On-demand authentication (Algorithms 5+6, UAV)",16384,29,4.719825999927707
+"On-demand authentication (Algorithms 5+6, UAV)",16384,30,4.1857800006255275

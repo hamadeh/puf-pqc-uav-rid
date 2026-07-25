@@ -20,15 +20,20 @@ machines is manual, on purpose, matching what you asked for.
 """
 
 import json
+import hashlib
 import os
+import struct
 
 import crypto_primitives as _cp
 
 # ---- Phase 1 parameters (Params, per the paper's Eq. system_params) ----
+PROTOCOL_VERSION = 1
 DELTA_T_SECONDS = 1          # Remote ID pseudonym interval
 N_INTERVALS = 1024             # n: publication-scale default; Phase 1 accepts --n
 M_ROOTS = 2                    # m: roots per enrollment/renewal cycle
 SECURITY_PARAMETER_BITS = 128  # lambda
+FRESHNESS_TOLERANCE_SECONDS = 30
+MAX_REQUEST_BYTES = 64 * 1024
 
 ML_DSA_ALG = "ML-DSA-65"
 ML_KEM_ALG = "ML-KEM-768"
@@ -39,17 +44,75 @@ ML_KEM_ALG = "ML-KEM-768"
 # lightweight/strong mode split, which the paper's final Algorithm 5+6
 # doesn't have (Phase 4 always runs the full sequence; see Section
 # III.H: "The protocol has no lower-assurance branch").
-TAG_ML_DSA = b"ML-DSA"
+TAG_PUF_SIGN = b"PUF-SIGN"
+TAG_PUF_MERKLE = b"PUF-MERKLE"
 TAG_MERKLE_ROOT = b"MerkleRoot"
 TAG_INTERVAL_SECRET = b"IntervalSecret"
 TAG_RID = b"RID"
-TAG_LEAF = b"leaf"
-TAG_NODE = b"node"
 TAG_RID_AUTH = b"RID-Auth"
-TAG_AUTH_TRANSCRIPT = b"RID-UAV-Auth-v1"
-TAG_STATE = b"state"
+TAG_ROOT_REQUEST = b"ROOT-REQUEST-v1"
+TAG_ROOT_AUTH = b"ROOT-AUTH-v1"
+TAG_VERIFIER_REQUEST = b"RID-VERIFIER-REQUEST-v1"
+TAG_UAV_RESPONSE = b"RID-UAV-RESPONSE-v1"
+TAG_AEAD_AD = b"RID-AEAD-AD-v1"
 TAG_REQID = b"ReqID"
 TAG_AEAD_NONCE = b"AEAD-Nonce"
+
+
+def u16(value: int) -> bytes:
+    if value < 0 or value > 0xFFFF:
+        raise ValueError("value outside uint16 range")
+    return struct.pack("!H", value)
+
+
+def u32(value: int) -> bytes:
+    if value < 0 or value > 0xFFFFFFFF:
+        raise ValueError("value outside uint32 range")
+    return struct.pack("!I", value)
+
+
+def u64(value: int) -> bytes:
+    if value < 0 or value > 0xFFFFFFFFFFFFFFFF:
+        raise ValueError("value outside uint64 range")
+    return struct.pack("!Q", value)
+
+
+def encode_labeled(label: bytes, *parts: bytes) -> bytes:
+    """
+    Versioned, length-delimited encoding for KDF and hash inputs.
+
+    Each field is typed by its fixed position under ``label`` and has a
+    network-order length.  This replaces ambiguous byte concatenation.
+    """
+    if not isinstance(label, bytes) or not label or len(label) > 255:
+        raise ValueError("domain label must contain 1..255 bytes")
+    encoded = b"URID" + bytes([PROTOCOL_VERSION, len(label)]) + label + u16(len(parts))
+    for part in parts:
+        if not isinstance(part, bytes):
+            raise TypeError("canonical labeled fields must be bytes")
+        encoded += u32(len(part)) + part
+    return encoded
+
+
+def hash_labeled(label: bytes, *parts: bytes) -> bytes:
+    return _cp.hash_bytes(encode_labeled(label, *parts))
+
+
+def kdf_labeled(label: bytes, *parts: bytes) -> bytes:
+    return _cp.kdf(encode_labeled(label, *parts))
+
+
+def shake256_labeled(label: bytes, *parts: bytes, output_bytes: int = 32) -> bytes:
+    return hashlib.shake_256(encode_labeled(label, *parts)).digest(output_bytes)
+
+
+def derive_purpose_secrets(k_puf: bytes, ctx_i: bytes) -> tuple[bytes, bytes]:
+    if len(k_puf) != 32:
+        raise ValueError("K_PUF must be 32 bytes")
+    return (
+        shake256_labeled(TAG_PUF_SIGN, k_puf, ctx_i),
+        shake256_labeled(TAG_PUF_MERKLE, k_puf, ctx_i),
+    )
 
 # ---- File-based "channel" helpers ----
 
@@ -147,10 +210,10 @@ def read_message(filepath: str) -> dict:
 # canonical bytes (canonical_json_bytes(req_auth) for req_auth_bytes).
 
 def compute_req_id(req_auth_bytes: bytes) -> bytes:
-    """ReqID = Trunc128(H256("ReqID" || ReqAuthWire)), Eq. (10)."""
-    return _cp.hash_bytes(TAG_REQID + req_auth_bytes)[:16]
+    """ReqID = Trunc128(H256(Enc("ReqID", ReqAuthWire)))."""
+    return hash_labeled(TAG_REQID, req_auth_bytes)[:16]
 
 
 def compute_aead_nonce(req_id: bytes, ct: bytes) -> bytes:
-    """N_A = Trunc128(H256("AEAD-Nonce" || ReqID || ct)), Eq. (11)."""
-    return _cp.hash_bytes(TAG_AEAD_NONCE + req_id + ct)[:16]
+    """N_A = Trunc128(H256(Enc("AEAD-Nonce", ReqID, ct)))."""
+    return hash_labeled(TAG_AEAD_NONCE, req_id, ct)[:16]

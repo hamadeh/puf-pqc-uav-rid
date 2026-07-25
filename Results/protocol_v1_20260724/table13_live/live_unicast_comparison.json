@@ -1,0 +1,80 @@
+{
+  "experiment_date": "2026-07-24",
+  "protocol_version": 1,
+  "channel": "TCP over a shared Wi-Fi LAN",
+  "roles": {
+    "uav": "Raspberry Pi 5",
+    "verifier": "Intel MacBook Pro"
+  },
+  "method": {
+    "warmup_trials_discarded": 1,
+    "recorded_trials_per_n": 30,
+    "fresh_request_per_trial": true,
+    "cryptographic_response_verification": true,
+    "rtt_start": "immediately before sending the framed request on an established TCP connection",
+    "rtt_end": "after the complete framed response is received",
+    "excluded_from_rtt": [
+      "TCP connection establishment",
+      "verifier request generation",
+      "final verifier response processing",
+      "physical PUF acquisition",
+      "pre-flight Merkle-tree activation"
+    ],
+    "packet_capture": "tcpdump on verifier interface; TShark TCP/IP analysis",
+    "n1024_capture_filter": "30 recorded source streams 48 through 77, renumbered 0 through 29 in the curated capture",
+    "n16384_capture_filter": "recorded source streams 1 through 30; stream 0 in the retained capture is the discarded warmup"
+  },
+  "results": [
+    {
+      "n": 1024,
+      "accepted_trials": 30,
+      "failed_trials": 0,
+      "rtt_mean_ms": 37.033691033333334,
+      "rtt_std_ms": 19.409675247258214,
+      "pi_processing_mean_ms": 17.402350766666668,
+      "pi_processing_std_ms": 2.957546789573607,
+      "request_payload_bytes": 10030,
+      "response_payload_bytes": 5095,
+      "total_tcp_application_bytes": 15149,
+      "tcp_packets_total": 792,
+      "tcp_packets_mean": 26.4,
+      "tcp_packets_std": 2.010318211,
+      "data_segments_total": 406,
+      "data_segments_mean": 13.533333333,
+      "data_segments_std": 1.224275531,
+      "tshark_retransmission_observations": 21,
+      "ipv4_fragments": 0,
+      "captured_ip_bytes_total": 514569,
+      "captured_frame_bytes_total": 525657
+    },
+    {
+      "n": 16384,
+      "accepted_trials": 30,
+      "failed_trials": 0,
+      "rtt_mean_ms": 33.89803023333333,
+      "rtt_std_ms": 25.511737717138807,
+      "pi_processing_mean_ms": 16.6191997,
+      "pi_processing_std_ms": 2.26584158747598,
+      "request_payload_bytes": 10030,
+      "response_payload_bytes": 5291,
+      "total_tcp_application_bytes": 15345,
+      "tcp_packets_total": 790,
+      "tcp_packets_mean": 26.333333333,
+      "tcp_packets_std": 2.264163594,
+      "data_segments_total": 399,
+      "data_segments_mean": 13.3,
+      "data_segments_std": 0.987857312,
+      "tshark_retransmission_observations": 12,
+      "ipv4_fragments": 0,
+      "captured_ip_bytes_total": 513509,
+      "captured_frame_bytes_total": 524569
+    }
+  ],
+  "interpretation_boundary": [
+    "RTT includes Wi-Fi transport and resident UAV request processing; it is not isolated radio latency.",
+    "TShark retransmission indicators are TCP-layer observations, not IEEE 802.11 MAC retry counts.",
+    "Zero application failures does not establish zero physical-layer loss.",
+    "Captured EN10MB frame bytes are not Wi-Fi airtime bytes.",
+    "These measurements are not physical PUF acquisition timings or fabricated-silicon results."
+  ]
+}

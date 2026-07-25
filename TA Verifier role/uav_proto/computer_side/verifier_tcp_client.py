@@ -69,10 +69,14 @@ def main() -> None:
     parser.add_argument("--warmup", type=int, default=0,
                         help="unrecorded trials before measurement")
     parser.add_argument("--timeout", type=float, default=180.0)
+    parser.add_argument(
+        "--inter-trial-delay", type=float, default=0.0,
+        help="seconds to wait between attempts (use at least 0.5 for the default UAV admission policy)",
+    )
     parser.add_argument("--request", type=Path,
-                        default=Path("out/verifier_reqauth.json"))
+                        default=Path("out/verifier_reqauth.bin"))
     parser.add_argument("--response", type=Path,
-                        default=Path("in/uav_response.json"))
+                        default=Path("in/uav_response.bin"))
     parser.add_argument(
         "--fresh-request", action="store_true",
         help="generate a fresh nonce/KEM request before every exchange",
@@ -83,8 +87,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    if args.trials < 1 or args.warmup < 0:
-        parser.error("--trials must be at least 1 and --warmup cannot be negative")
+    if args.trials < 1 or args.warmup < 0 or args.inter_trial_delay < 0:
+        parser.error(
+            "--trials must be at least 1; warmup and delay cannot be negative"
+        )
 
     # With --fresh-request, the request file is intentionally allowed to be
     # absent at startup; verifier_phase4_request.py creates it per attempt.
@@ -98,12 +104,14 @@ def main() -> None:
     total_attempts = args.warmup + args.trials
 
     for attempt in range(total_attempts):
+        if attempt and args.inter_trial_delay:
+            time.sleep(args.inter_trial_delay)
         measured = attempt >= args.warmup
         trial = attempt - args.warmup + 1 if measured else 0
         try:
             if args.fresh_request:
                 generated = subprocess.run(
-                    [sys.executable, "verifier_phase4_request.py"],
+                    [sys.executable, "verifier_phase4_request.py", "--force"],
                     text=True, capture_output=True,
                 )
                 if generated.returncode != 0:
@@ -126,7 +134,7 @@ def main() -> None:
                     text=True, capture_output=True,
                 )
                 if checked.returncode != 0 or \
-                   "ACCEPT: signing identity and Merkle root both bound." not in checked.stdout:
+                   "ACCEPT: certificate, revocation, time, Merkle, and UAV signature checks passed." not in checked.stdout:
                     raise RuntimeError(
                         "response verification failed: "
                         + (checked.stderr or checked.stdout).strip()

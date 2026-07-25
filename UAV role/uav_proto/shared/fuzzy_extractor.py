@@ -1,84 +1,179 @@
 """
-fuzzy_extractor.py
+PUF.Enroll / PUF.Reconstruct for the manuscript's selected-response interface.
 
-FE.Gen / FE.Rec, Eq. (4)-(5): ChallengeSchedule -> MajorityPUF(9 reads)
--> BCH(1023,943,17) secure sketch -> seeded 256-bit Toeplitz extraction.
-Delegates to puf_pipeline_1023.py (the majority-vote/BCH/Toeplitz
-pipeline originally built for the Table 17 benchmark, now shared
-production infrastructure), majority_vote.py, and
-toeplitz_extractor.py, rather than reimplementing that pipeline here.
+Enrollment majority-votes 1023 comparisons, retains the device-specific
+top-950 positions meeting the fixed 0.5% normalized-margin threshold, creates
+a code-offset helper using shortened BCH(950,870), and applies a seeded
+950-to-256-bit Toeplitz extractor.  Reconstruction reuses the public mask and
+helper data and fails when BCH decoding cannot recover a valid codeword.
 
-WHAT CHANGED FROM THE EARLIER VERSION: that version worked over a
-64-byte raw response from a single puf_emulated.puf_response() call,
-using BCH t=8/m=13 (a 8191-bit codeword sized for a 512-bit input) and
-extracting the secret via a plain hash rather than a Toeplitz
-extractor -- none of which matches the paper's actual construction (a
-1023-bit majority-voted RO-PUF response, BCH(1023,943,17), and the
-seeded 2-universal Toeplitz extractor of Eq. 4-5). This version fixes
-that by using the real pipeline for both PUF channels (this codebase
-keeps the dual-challenge design: one independent challenge schedule and
-FE.Gen/FE.Rec call for S1's channel, another for S2's -- see
-uav_phase2_enroll_request.py -- rather than the paper's single-K_PUF +
-SHAKE256 split; both channels individually now run the paper-exact
-per-challenge pipeline).
-
-HELPER DATA FORMAT: HD = bch_ecc (10 bytes) || toeplitz_seed (160
-bytes) = 170 bytes total, packed as one blob for API compatibility
-with callers that store a single HD value (Store_NV). This matches the
-paper's own stated total exactly: Table 16 states "170 bytes of helper
-data."
+The helper data is public and contains the selection mask, code offset,
+Toeplitz seed, and fixed reconstruction parameters.  Its contents must be
+included when assessing conditional PUF entropy.
 """
 
+import secrets
+
+import bch950
 import challenge_schedule
+import majority_vote
 import puf_emulated
-import puf_pipeline_1023 as _pipeline
+import toeplitz_extractor
 
-_ECC_BYTES = 10  # bchlib(t=8, m=10)'s ecc_bytes; see puf_pipeline_1023.py
-
-
-def fe_gen(raw_reads: list) -> tuple:
-    """
-    FE.Gen(R) -> (secret, helper_data), Eq. (4).
-
-    raw_reads: NUM_CHALLENGES x READS_PER_CHALLENGE noisy comparator
-    reads (majority_vote.majority_vote()'s input shape), typically from
-    puf_emulated.acquire_response_reads(). See gen_from_seed() below for
-    a higher-level entry point that also handles challenge-schedule
-    generation and PUF acquisition.
-    """
-    k_puf, ecc, toeplitz_seed = _pipeline.fe_gen_1023(raw_reads)
-    helper_data = ecc + toeplitz_seed
-    return k_puf, helper_data
+MARGIN_THRESHOLD = 0.005
+CANDIDATE_BITS = 1023
+SELECTED_BITS = 950
+READS_PER_CHALLENGE = 9
+HELPER_VERSION = 1
+_SELECTED_BYTES = (SELECTED_BITS + 7) // 8
 
 
-def fe_rec(raw_reads_noisy: list, helper_data: bytes):
-    """
-    FE.Rec(R', helper_data) -> secret, or None if correction fails
-    (more than t=8 bit errors in the BCH-protected message), Eq. (5).
-    """
-    ecc = helper_data[:_ECC_BYTES]
-    toeplitz_seed = helper_data[_ECC_BYTES:]
-    return _pipeline.fe_rec_1023(raw_reads_noisy, ecc, toeplitz_seed)
+def _majority_bits(raw_reads: list[list[int]]) -> list[int]:
+    packed = majority_vote.majority_vote(raw_reads)
+    return [
+        (packed[index // 8] >> (7 - index % 8)) & 1
+        for index in range(CANDIDATE_BITS)
+    ]
 
 
-def gen_from_seed(c_seed: bytes) -> tuple:
-    """
-    Convenience wrapper for enrollment: ChallengeSchedule(c_seed) ->
-    acquire 9 reads/challenge -> FE.Gen. Returns (secret, helper_data).
-    """
+def _bits_to_int(bits: list[int]) -> int:
+    value = 0
+    for bit in bits:
+        if bit not in (0, 1):
+            raise ValueError("response entries must be binary")
+        value = (value << 1) | bit
+    return value
+
+
+def _pack_fixed(value: int, bit_count: int) -> bytes:
+    if value < 0 or value >= (1 << bit_count):
+        raise ValueError(f"value does not fit in {bit_count} bits")
+    return value.to_bytes((bit_count + 7) // 8, "big")
+
+
+def _unpack_fixed(data: bytes, bit_count: int) -> int:
+    expected = (bit_count + 7) // 8
+    if len(data) != expected:
+        raise ValueError(f"expected {expected} bytes for {bit_count} bits")
+    value = int.from_bytes(data, "big")
+    if value >= (1 << bit_count):
+        raise ValueError("unused high padding bits must be zero")
+    return value
+
+
+def select_top950(margins: list[float]) -> list[int]:
+    """Return a deterministic, schedule-ordered mask for eligible positions."""
+    if len(margins) != CANDIDATE_BITS:
+        raise ValueError(f"expected {CANDIDATE_BITS} enrollment margins")
+    eligible = [
+        (float(margin), index)
+        for index, margin in enumerate(margins)
+        if float(margin) >= MARGIN_THRESHOLD
+    ]
+    if len(eligible) < SELECTED_BITS:
+        raise ValueError(
+            f"PUF enrollment rejected: only {len(eligible)} positions meet "
+            f"the {100 * MARGIN_THRESHOLD:.1f}% margin threshold"
+        )
+    chosen = sorted(eligible, key=lambda item: (-item[0], item[1]))[:SELECTED_BITS]
+    return sorted(index for _, index in chosen)
+
+
+def _validate_indices(indices: list[int]) -> None:
+    if len(indices) != SELECTED_BITS:
+        raise ValueError(f"selection mask must contain {SELECTED_BITS} positions")
+    if indices != sorted(indices) or len(set(indices)) != SELECTED_BITS:
+        raise ValueError("selection positions must be unique and increasing")
+    if indices[0] < 0 or indices[-1] >= CANDIDATE_BITS:
+        raise ValueError("selection position outside the 1023-comparison schedule")
+
+
+def fe_gen(raw_reads: list[list[int]], margins: list[float]) -> tuple[bytes, dict]:
+    """Enroll one response and return ``(K_PUF, public_helper_data)``."""
+    response = _majority_bits(raw_reads)
+    indices = select_top950(margins)
+    selected = _bits_to_int([response[index] for index in indices])
+
+    random_message = secrets.randbits(bch950.SHORT_K)
+    codeword = bch950.encode(random_message)
+    code_offset = selected ^ codeword
+    toeplitz_seed = toeplitz_extractor.generate_seed()
+    k_puf = toeplitz_extractor.extract_int(selected, toeplitz_seed)
+
+    helper = {
+        "version": HELPER_VERSION,
+        "candidate_bits": CANDIDATE_BITS,
+        "selected_bits": SELECTED_BITS,
+        "margin_threshold_ppm": int(MARGIN_THRESHOLD * 1_000_000),
+        "reads_per_challenge": READS_PER_CHALLENGE,
+        "bch_n": bch950.SHORT_N,
+        "bch_k": bch950.SHORT_K,
+        "bch_t": bch950.T,
+        "selection_indices": indices,
+        "code_offset": _pack_fixed(code_offset, SELECTED_BITS),
+        "toeplitz_seed": toeplitz_seed,
+    }
+    return k_puf, helper
+
+
+def _validate_helper(helper: dict) -> list[int]:
+    required = {
+        "version", "candidate_bits", "selected_bits", "margin_threshold_ppm",
+        "reads_per_challenge", "bch_n", "bch_k", "bch_t",
+        "selection_indices", "code_offset", "toeplitz_seed",
+    }
+    if set(helper) != required:
+        raise ValueError("helper data has missing or unknown fields")
+    expected = {
+        "version": HELPER_VERSION,
+        "candidate_bits": CANDIDATE_BITS,
+        "selected_bits": SELECTED_BITS,
+        "margin_threshold_ppm": int(MARGIN_THRESHOLD * 1_000_000),
+        "reads_per_challenge": READS_PER_CHALLENGE,
+        "bch_n": bch950.SHORT_N,
+        "bch_k": bch950.SHORT_K,
+        "bch_t": bch950.T,
+    }
+    for field, value in expected.items():
+        if helper[field] != value:
+            raise ValueError(f"unsupported helper-data parameter: {field}")
+    indices = list(helper["selection_indices"])
+    _validate_indices(indices)
+    _unpack_fixed(helper["code_offset"], SELECTED_BITS)
+    if len(helper["toeplitz_seed"]) != toeplitz_extractor.SEED_BYTES:
+        raise ValueError("invalid Toeplitz seed length")
+    return indices
+
+
+def fe_rec(raw_reads_noisy: list[list[int]], helper: dict) -> bytes | None:
+    """Reconstruct K_PUF, returning ``None`` on decoder failure."""
+    try:
+        indices = _validate_helper(helper)
+        response = _majority_bits(raw_reads_noisy)
+        selected_noisy = _bits_to_int([response[index] for index in indices])
+        code_offset = _unpack_fixed(helper["code_offset"], SELECTED_BITS)
+        received_codeword = selected_noisy ^ code_offset
+        decoded = bch950.decode(received_codeword)
+        if decoded is None:
+            return None
+        _, corrected_codeword, _ = decoded
+        enrolled_selected = corrected_codeword ^ code_offset
+        return toeplitz_extractor.extract_int(
+            enrolled_selected, helper["toeplitz_seed"]
+        )
+    except (TypeError, ValueError, KeyError):
+        return None
+
+
+def gen_from_seed(c_seed: bytes) -> tuple[bytes, dict]:
+    """Software-emulator enrollment wrapper; not a physical PUF measurement."""
     challenges = challenge_schedule.challenge_schedule(c_seed)
     reads = puf_emulated.acquire_response_reads(challenges)
-    return fe_gen(reads)
+    margins = puf_emulated.enrollment_margins(challenges)
+    return fe_gen(reads, margins)
 
 
-def rec_from_seed(c_seed: bytes, helper_data: bytes):
-    """
-    Convenience wrapper for reconstruction (Phase 3 activation, Phase 4
-    authentication): regenerates the SAME challenge schedule from
-    c_seed (must be the identical seed used at enrollment), acquires a
-    fresh set of 9 noisy reads per challenge, and runs FE.Rec. Returns
-    the secret, or None if correction fails.
-    """
+def rec_from_seed(c_seed: bytes, helper: dict) -> bytes | None:
     challenges = challenge_schedule.challenge_schedule(c_seed)
     reads = puf_emulated.acquire_response_reads(challenges)
-    return fe_rec(reads, helper_data)
+    return fe_rec(reads, helper)

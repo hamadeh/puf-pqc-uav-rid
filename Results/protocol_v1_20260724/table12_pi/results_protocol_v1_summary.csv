@@ -1,0 +1,8 @@
+operation,n,mean_ms,std_ms,trials
+"PUF reconstruction + BCH(950,870) + Toeplitz-256",-,1.870177933233208,0.03667159797100912,30
+One Merkle-root generation,1024,74.19450269990193,0.47063064514371217,30
+Pre-flight root activation (Algorithm 3),1024,76.92321223354763,0.5853998671057657,30
+"On-demand authentication (Algorithms 5+6, UAV)",1024,4.218053533380346,0.41676364551719075,30
+One Merkle-root generation,16384,1182.8021920000538,3.370301605584398,30
+Pre-flight root activation (Algorithm 3),16384,1206.367276666909,15.447396663255134,30
+"On-demand authentication (Algorithms 5+6, UAV)",16384,4.470799933430196,0.5535412489502768,30

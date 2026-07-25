@@ -1,98 +1,115 @@
-"""
-ta_phase2_verifier_enroll_process.py
+"""Issue a verifier challenge or validate PoP and return a scoped AuthDB."""
 
-Runs on: your computer (TA role).
-Implements: Algorithm 2's verifier-enrollment procedure, the TA's half.
-Issues Cert_Vj and hands back a scoped slice of the operational database,
-AuthDB_Vj, containing only root records whose scope matches what this
-verifier is authorized for.
-
-Reads verifier_enroll_request.json directly (same machine as the
-verifier scripts, see verifier_phase2_enroll_request.py's docstring for
-why no hex-copy step is needed here). Reads ta_operational_db.json,
-never touches ta_legal_registration_db.json, that file must never
-contribute to what a verifier receives.
-
-Produces: out/verifier_AuthDB.json, this is what the verifier keeps
-locally to check proofs in Phase 4. If the verifier is later split onto
-a separate machine, this is the file you'd copy there.
-"""
-
-import sys
+import argparse
 import os
-import json
+import secrets
+import sys
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "shared"))
-import protocol_common as pc
 
 import oqs
+
+import protocol_common as pc
+import protocol_messages as pm
+import revocation
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), "out")
 
 
-def main():
-    request_path = os.path.join(OUT_DIR, "verifier_enroll_request.json")
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--issue-challenge", action="store_true")
+    parser.add_argument("--verifier-id", default="VERIFIER-001")
+    parser.add_argument("--force", action="store_true")
+    args = parser.parse_args()
     secret_path = os.path.join(OUT_DIR, "ta_secret_DO_NOT_SHARE.json")
-    ta_public_path = os.path.join(OUT_DIR, "ta_public_params.json")
-    operational_db_path = os.path.join(OUT_DIR, "ta_operational_db.json")
+    public_path = os.path.join(OUT_DIR, "ta_public_params.json")
+    secret = pc.read_message(secret_path)
+    public = pc.read_message(public_path)
 
-    for p in (request_path, secret_path, ta_public_path):
-        if not os.path.exists(p):
-            print(f"ERROR: {p} not found.")
-            sys.exit(1)
+    if args.issue_challenge:
+        path = os.path.join(OUT_DIR, "ta_verifier_challenge.json")
+        if os.path.exists(path) and not args.force:
+            raise SystemExit(f"Refusing to overwrite {path}; use --force.")
+        challenge = {
+            "verifier_id": args.verifier_id,
+            "n_ta": secrets.token_bytes(16),
+            "expires": int(time.time()) + 900,
+            "used": False,
+        }
+        secret["issued_verifier_challenges"].append(challenge)
+        pc.write_message(secret_path, secret)
+        pc.write_message(path, {
+            "verifier_id": challenge["verifier_id"],
+            "n_ta": challenge["n_ta"], "expires": challenge["expires"],
+        })
+        print(f"Issued verifier challenge: {path}")
+        return
 
-    request = pc.read_message(request_path)
-    ta_secret = pc.read_message(secret_path)
-    ta_public = pc.read_message(ta_public_path)
-    sk_ta = ta_secret["sk_ta"]
-    ml_dsa_alg = ta_public["ml_dsa_alg"]
-
-    print("Phase 2: Verifier Enrollment, TA side")
-    print(f"Processing enrollment request from {request['vid_j']} "
-          f"(scope: {request['scope_j']})...")
-
-    # Cert_Vj = Sign_SK_TA(VID_j || PK_Vj || Scope_j || Validity_j)
-    # Canonical JSON for validity_j, same reasoning as the AuthRec fix in
-    # ta_phase2_enroll_process.py, str(dict) is not safe to rely on here.
-    validity_canonical = json.dumps(request["validity_j"], sort_keys=True).encode("utf-8")
-    to_sign = (
-        request["vid_j"].encode("utf-8") + request["pk_vj"] +
-        request["scope_j"].encode("utf-8") + validity_canonical
-    )
-    with oqs.Signature(ml_dsa_alg, sk_ta) as ta_signer:
-        cert_signature = ta_signer.sign(to_sign)
-
-    print(f"  Issued Cert_Vj: {len(cert_signature)} bytes")
-
-    # Build the scoped AuthDB_Vj: only root records matching this verifier's scope
-    operational_db = pc.read_message(operational_db_path) if os.path.exists(operational_db_path) \
-        else {"root_records": []}
-
-    scoped_records = [
-        r for r in operational_db["root_records"]
-        if r["flight_ctx"].get("scope") == request["scope_j"]
-    ]
-    print(f"  AuthDB_Vj: {len(scoped_records)} of "
-          f"{len(operational_db['root_records'])} root records match scope "
-          f"'{request['scope_j']}'")
-
-    auth_db = {
-        "vid_j": request["vid_j"],
-        "cert_vj": {
-            "vid_j": request["vid_j"],
-            "pk_vj": request["pk_vj"],
-            "scope_j": request["scope_j"],
-            "validity_j": request["validity_j"],
-            "signature": cert_signature,
-        },
-        "root_records": scoped_records,
-    }
-
+    request_path = os.path.join(OUT_DIR, "verifier_enroll_request.json")
     auth_db_path = os.path.join(OUT_DIR, "verifier_AuthDB.json")
+    if os.path.exists(auth_db_path) and not args.force:
+        raise SystemExit(f"Refusing to overwrite {auth_db_path}; use --force.")
+    request = pc.read_message(request_path)
+    body, pop = request["body"], request["pop"]
+    parsed = pm.decode_cert_request(body)
+    now = int(time.time())
+    challenge = next(
+        (entry for entry in secret["issued_verifier_challenges"]
+         if entry["verifier_id"] == parsed["verifier_id"]
+         and entry["n_ta"] == parsed["n_ta"]),
+        None,
+    )
+    if challenge is None or challenge["used"] or challenge["expires"] < now:
+        raise ValueError("missing, expired, or reused verifier challenge")
+    if parsed["valid_from"] > now + pc.FRESHNESS_TOLERANCE_SECONDS:
+        raise ValueError("verifier certificate is not yet valid")
+    with oqs.Signature(public["ml_dsa_alg"]) as verifier:
+        if not verifier.verify(body, pop, parsed["pk_v"]):
+            raise ValueError("invalid verifier proof of possession")
+    cert_body = pm.encode_cert_body(
+        parsed["verifier_id"], parsed["organization"], parsed["role"],
+        parsed["scope"], parsed["valid_from"], parsed["valid_until"],
+        parsed["pk_v"],
+    )
+    with oqs.Signature(public["ml_dsa_alg"], secret["sk_ta"]) as signer:
+        cert_record = pm.encode_signed_record(
+            cert_body, signer.sign(cert_body), pm.TYPE_CERT_RECORD
+        )
+    challenge["used"] = True
+    pc.write_message(secret_path, secret)
+
+    operational_path = os.path.join(OUT_DIR, "ta_operational_db.json")
+    operational = (
+        pc.read_message(operational_path)
+        if os.path.exists(operational_path) else {"root_records": []}
+    )
+    scoped = []
+    for record in operational["root_records"]:
+        auth_body, _ = pm.decode_signed_record(
+            record["auth_record"], pm.TYPE_AUTH_RECORD
+        )
+        if pm.decode_root_auth_body(auth_body)["flight_ctx"]["scope"] == parsed["scope"]:
+            scoped.append({
+                "auth_record": record["auth_record"],
+                "root_id": record["root_id"], "key_id": record["key_id"],
+            })
+    rl_record = pc.read_message(
+        os.path.join(OUT_DIR, "ta_revocation_list.json")
+    )["rl_record"]
+    auth_db = {
+        "protocol_version": pc.PROTOCOL_VERSION,
+        "cert_record": cert_record,
+        "cert_id": revocation.object_id(cert_record),
+        "root_records": scoped,
+        "rl_record": rl_record,
+    }
     pc.write_message(auth_db_path, auth_db)
-    print(f"\nWrote AuthDB_Vj: {auth_db_path}")
-    print("(same machine as the verifier scripts here; copy this file "
-          "elsewhere only if you later run the verifier on a separate machine)")
+    print(
+        f"Issued certificate and {len(scoped)} scoped root record(s): "
+        f"{auth_db_path}"
+    )
 
 
 if __name__ == "__main__":

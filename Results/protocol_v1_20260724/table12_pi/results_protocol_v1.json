@@ -1,0 +1,1356 @@
+{
+  "metadata": {
+    "protocol_version": 1,
+    "platform": "Linux-6.18.34+rpt-rpi-2712-aarch64-with-glibc2.41",
+    "machine": "aarch64",
+    "python": "3.13.5",
+    "puf_vector_source": "/home/pi/uav_proto/puf_vectors_stage128.json",
+    "puf_margin_source": "deterministic timing fixture; not LTspice or silicon",
+    "warmup_discarded": 1,
+    "trials": 30,
+    "physical_puf_acquisition_latency": "excluded/unavailable",
+    "transport_latency": "excluded",
+    "admission_fixture": "fresh isolated replay/rate-limit state constructed per timed authentication so an identical signed request can be repeated"
+  },
+  "raw_trials": [
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 1,
+      "latency_ms": 1.9273939997219713
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 2,
+      "latency_ms": 1.8220199999632314
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 3,
+      "latency_ms": 1.9190040002285969
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 4,
+      "latency_ms": 1.9125049984722864
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 5,
+      "latency_ms": 1.8670219997147797
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 6,
+      "latency_ms": 1.8139089988835622
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 7,
+      "latency_ms": 1.8752440009848215
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 8,
+      "latency_ms": 1.8630029990163166
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 9,
+      "latency_ms": 1.9089119996351656
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 10,
+      "latency_ms": 1.8190389982919442
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 11,
+      "latency_ms": 1.8481509996490786
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 12,
+      "latency_ms": 1.8985779988724971
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 13,
+      "latency_ms": 1.9004860005225055
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 14,
+      "latency_ms": 1.8333349999011261
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 15,
+      "latency_ms": 1.874485000371351
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 16,
+      "latency_ms": 1.8765219992928905
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 17,
+      "latency_ms": 1.8820220011548372
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 18,
+      "latency_ms": 1.860243999544764
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 19,
+      "latency_ms": 1.7958720000024186
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 20,
+      "latency_ms": 1.9138000006932998
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 21,
+      "latency_ms": 1.9034490014746552
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 22,
+      "latency_ms": 1.8537619998824084
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 23,
+      "latency_ms": 1.841020999563625
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 24,
+      "latency_ms": 1.8599840004753787
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 25,
+      "latency_ms": 1.8767069996101782
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 26,
+      "latency_ms": 1.901763000205392
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 27,
+      "latency_ms": 1.8202610008302145
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 28,
+      "latency_ms": 1.8327239995414857
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 29,
+      "latency_ms": 1.8768190002447227
+    },
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "",
+      "trial": 30,
+      "latency_ms": 1.9273010002507363
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 1,
+      "latency_ms": 74.11928299916326
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 2,
+      "latency_ms": 73.79016500090074
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 3,
+      "latency_ms": 74.68031400094333
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 4,
+      "latency_ms": 73.87040699904901
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 5,
+      "latency_ms": 73.97544699961145
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 6,
+      "latency_ms": 73.69814400044561
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 7,
+      "latency_ms": 73.71345999854384
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 8,
+      "latency_ms": 73.74427400100103
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 9,
+      "latency_ms": 73.66480699965905
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 10,
+      "latency_ms": 74.30861700049718
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 11,
+      "latency_ms": 73.96146100109036
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 12,
+      "latency_ms": 73.84045899925695
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 13,
+      "latency_ms": 73.94625699998869
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 14,
+      "latency_ms": 74.2453189996013
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 15,
+      "latency_ms": 73.78171700111125
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 16,
+      "latency_ms": 74.59375300095417
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 17,
+      "latency_ms": 74.00161099940306
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 18,
+      "latency_ms": 74.15526200020395
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 19,
+      "latency_ms": 74.57169699955557
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 20,
+      "latency_ms": 74.66806899901712
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 21,
+      "latency_ms": 74.20046600054775
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 22,
+      "latency_ms": 74.14631400024518
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 23,
+      "latency_ms": 73.70221199926164
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 24,
+      "latency_ms": 74.13816500047687
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 25,
+      "latency_ms": 74.3110949988477
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 26,
+      "latency_ms": 74.99820299926796
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 27,
+      "latency_ms": 75.00872099990374
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 28,
+      "latency_ms": 73.84319599987066
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 29,
+      "latency_ms": 74.50500699997065
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "trial": 30,
+      "latency_ms": 75.65117899866891
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 1,
+      "latency_ms": 76.68607199957478
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 2,
+      "latency_ms": 76.04883599924506
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 3,
+      "latency_ms": 76.67360900086351
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 4,
+      "latency_ms": 76.14896500126633
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 5,
+      "latency_ms": 76.22781800091616
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 6,
+      "latency_ms": 76.34776499980944
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 7,
+      "latency_ms": 76.72464300048887
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 8,
+      "latency_ms": 76.59095499911928
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 9,
+      "latency_ms": 76.45910099927278
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 10,
+      "latency_ms": 76.76727400030359
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 11,
+      "latency_ms": 76.32319100048335
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 12,
+      "latency_ms": 76.9495549993735
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 13,
+      "latency_ms": 76.97353799994744
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 14,
+      "latency_ms": 77.99987399994279
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 15,
+      "latency_ms": 77.90337200094655
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 16,
+      "latency_ms": 78.31584400082647
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 17,
+      "latency_ms": 76.78914200005238
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 18,
+      "latency_ms": 76.69360200088704
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 19,
+      "latency_ms": 76.78953000140609
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 20,
+      "latency_ms": 77.07627700074227
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 21,
+      "latency_ms": 76.10842300164222
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 22,
+      "latency_ms": 77.16342599997006
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 23,
+      "latency_ms": 77.34115299899713
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 24,
+      "latency_ms": 76.84178999988944
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 25,
+      "latency_ms": 76.97025599918561
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 26,
+      "latency_ms": 76.71984300031909
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 27,
+      "latency_ms": 77.08235099926242
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 28,
+      "latency_ms": 77.77618100044492
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 29,
+      "latency_ms": 77.38300600067305
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "trial": 30,
+      "latency_ms": 77.82097500057716
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 1,
+      "latency_ms": 3.928861999156652
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 2,
+      "latency_ms": 4.213164000248071
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 3,
+      "latency_ms": 3.843026999675203
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 4,
+      "latency_ms": 4.6279880007205065
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 5,
+      "latency_ms": 4.200368000965682
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 6,
+      "latency_ms": 4.562115000226186
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 7,
+      "latency_ms": 5.000735998692107
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 8,
+      "latency_ms": 3.9593620003870456
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 9,
+      "latency_ms": 3.9782329986337572
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 10,
+      "latency_ms": 4.182329999821377
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 11,
+      "latency_ms": 3.926788000171655
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 12,
+      "latency_ms": 3.9925669989315793
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 13,
+      "latency_ms": 5.143480000697309
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 14,
+      "latency_ms": 3.9468430004490074
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 15,
+      "latency_ms": 3.976973999670008
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 16,
+      "latency_ms": 4.163218000030611
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 17,
+      "latency_ms": 3.851990000839578
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 18,
+      "latency_ms": 4.1009209999174345
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 19,
+      "latency_ms": 3.7615429992001737
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 20,
+      "latency_ms": 4.507781000938849
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 21,
+      "latency_ms": 4.5386340007098624
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 22,
+      "latency_ms": 3.984696000770782
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 23,
+      "latency_ms": 3.7242090002109762
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 24,
+      "latency_ms": 3.7274690002959687
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 25,
+      "latency_ms": 3.9721029988868395
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 26,
+      "latency_ms": 3.9398980006808415
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 27,
+      "latency_ms": 4.0704200000618584
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 28,
+      "latency_ms": 4.937383000651607
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 29,
+      "latency_ms": 4.911530000754283
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "trial": 30,
+      "latency_ms": 4.86697399901459
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 1,
+      "latency_ms": 1189.786823999384
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 2,
+      "latency_ms": 1188.821886000369
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 3,
+      "latency_ms": 1182.1492170001875
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 4,
+      "latency_ms": 1183.253336999769
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 5,
+      "latency_ms": 1182.6259790013864
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 6,
+      "latency_ms": 1185.072021000451
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 7,
+      "latency_ms": 1184.437555999466
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 8,
+      "latency_ms": 1178.092137000931
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 9,
+      "latency_ms": 1180.3553410009044
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 10,
+      "latency_ms": 1181.3706450011523
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 11,
+      "latency_ms": 1182.9169829998136
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 12,
+      "latency_ms": 1181.3987959994847
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 13,
+      "latency_ms": 1183.5336289987026
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 14,
+      "latency_ms": 1186.9671550011844
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 15,
+      "latency_ms": 1183.3797349991073
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 16,
+      "latency_ms": 1179.917524999837
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 17,
+      "latency_ms": 1193.589296999562
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 18,
+      "latency_ms": 1179.563744999541
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 19,
+      "latency_ms": 1181.2486620001437
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 20,
+      "latency_ms": 1183.025522999742
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 21,
+      "latency_ms": 1179.2123960003664
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 22,
+      "latency_ms": 1181.157577000704
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 23,
+      "latency_ms": 1180.810953999753
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 24,
+      "latency_ms": 1181.2516969985154
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 25,
+      "latency_ms": 1182.4543090006046
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 26,
+      "latency_ms": 1180.8505429999059
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 27,
+      "latency_ms": 1185.2788270007295
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 28,
+      "latency_ms": 1180.259536999074
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 29,
+      "latency_ms": 1180.752301001121
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "trial": 30,
+      "latency_ms": 1180.5316259997198
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 1,
+      "latency_ms": 1190.9059580011672
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 2,
+      "latency_ms": 1189.719096000772
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 3,
+      "latency_ms": 1189.815241999895
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 4,
+      "latency_ms": 1192.5834019984904
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 5,
+      "latency_ms": 1193.1438330011588
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 6,
+      "latency_ms": 1196.9063550004648
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 7,
+      "latency_ms": 1197.32291299988
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 8,
+      "latency_ms": 1194.6282650005742
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 9,
+      "latency_ms": 1196.996102000412
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 10,
+      "latency_ms": 1196.395176999431
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 11,
+      "latency_ms": 1191.446533999624
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 12,
+      "latency_ms": 1198.2458809998207
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 13,
+      "latency_ms": 1197.718570001598
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 14,
+      "latency_ms": 1201.2644290007302
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 15,
+      "latency_ms": 1204.8226770002657
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 16,
+      "latency_ms": 1202.3930810009915
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 17,
+      "latency_ms": 1200.8128249999572
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 18,
+      "latency_ms": 1201.9646019998618
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 19,
+      "latency_ms": 1207.0102840007166
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 20,
+      "latency_ms": 1205.8310550000897
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 21,
+      "latency_ms": 1202.7538000002096
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 22,
+      "latency_ms": 1212.8117230004136
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 23,
+      "latency_ms": 1212.3388390009495
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 24,
+      "latency_ms": 1220.8662150005694
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 25,
+      "latency_ms": 1248.5186569992948
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 26,
+      "latency_ms": 1221.2734799995815
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 27,
+      "latency_ms": 1235.3590660004556
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 28,
+      "latency_ms": 1235.8835140003066
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 29,
+      "latency_ms": 1220.3605419999803
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "trial": 30,
+      "latency_ms": 1230.9261829996103
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 1,
+      "latency_ms": 4.087019000508008
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 2,
+      "latency_ms": 5.40050499876088
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 3,
+      "latency_ms": 3.719567001098767
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 4,
+      "latency_ms": 3.828476999842678
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 5,
+      "latency_ms": 4.212021000057575
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 6,
+      "latency_ms": 4.095667000001413
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 7,
+      "latency_ms": 4.182872000455973
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 8,
+      "latency_ms": 3.9417570005753078
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 9,
+      "latency_ms": 4.4313769994914765
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 10,
+      "latency_ms": 4.19350099946314
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 11,
+      "latency_ms": 3.9961830007086974
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 12,
+      "latency_ms": 4.914737000945024
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 13,
+      "latency_ms": 4.5627300005435245
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 14,
+      "latency_ms": 4.618749999281135
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 15,
+      "latency_ms": 4.321558999436093
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 16,
+      "latency_ms": 4.277965999790467
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 17,
+      "latency_ms": 4.832586999327759
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 18,
+      "latency_ms": 6.089425000027404
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 19,
+      "latency_ms": 4.47982200057595
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 20,
+      "latency_ms": 4.625861000022269
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 21,
+      "latency_ms": 4.742326000268804
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 22,
+      "latency_ms": 5.758363999120775
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 23,
+      "latency_ms": 4.303318000893341
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 24,
+      "latency_ms": 4.55439699908311
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 25,
+      "latency_ms": 4.130538000026718
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 26,
+      "latency_ms": 3.985164001278463
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 27,
+      "latency_ms": 3.8744590001442702
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 28,
+      "latency_ms": 5.057443000623607
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 29,
+      "latency_ms": 4.719825999927707
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "trial": 30,
+      "latency_ms": 4.1857800006255275
+    }
+  ],
+  "summary": [
+    {
+      "operation": "PUF reconstruction + BCH(950,870) + Toeplitz-256",
+      "n": "-",
+      "mean_ms": 1.870177933233208,
+      "std_ms": 0.03667159797100912,
+      "trials": 30
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 1024,
+      "mean_ms": 74.19450269990193,
+      "std_ms": 0.47063064514371217,
+      "trials": 30
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 1024,
+      "mean_ms": 76.92321223354763,
+      "std_ms": 0.5853998671057657,
+      "trials": 30
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 1024,
+      "mean_ms": 4.218053533380346,
+      "std_ms": 0.41676364551719075,
+      "trials": 30
+    },
+    {
+      "operation": "One Merkle-root generation",
+      "n": 16384,
+      "mean_ms": 1182.8021920000538,
+      "std_ms": 3.370301605584398,
+      "trials": 30
+    },
+    {
+      "operation": "Pre-flight root activation (Algorithm 3)",
+      "n": 16384,
+      "mean_ms": 1206.367276666909,
+      "std_ms": 15.447396663255134,
+      "trials": 30
+    },
+    {
+      "operation": "On-demand authentication (Algorithms 5+6, UAV)",
+      "n": 16384,
+      "mean_ms": 4.470799933430196,
+      "std_ms": 0.5535412489502768,
+      "trials": 30
+    }
+  ],
+  "sizes": [
+    {
+      "n": 1024,
+      "request_bytes": 10030,
+      "response_bytes": 5095,
+      "broadcast_uas_id_bytes": 20,
+      "merkle_path_entries": 10,
+      "merkle_path_encoded_bytes": 492,
+      "auth_record_bytes": 5481,
+      "cert_record_bytes": 5404,
+      "revocation_record_bytes": 3403,
+      "helper_data_local_json_bytes": 9375,
+      "interval_journal_bytes": 0
+    },
+    {
+      "n": 16384,
+      "request_bytes": 10030,
+      "response_bytes": 5291,
+      "broadcast_uas_id_bytes": 20,
+      "merkle_path_entries": 14,
+      "merkle_path_encoded_bytes": 688,
+      "auth_record_bytes": 5481,
+      "cert_record_bytes": 5404,
+      "revocation_record_bytes": 3403,
+      "helper_data_local_json_bytes": 9375,
+      "interval_journal_bytes": 0
+    }
+  ]
+}

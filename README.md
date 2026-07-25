@@ -118,44 +118,44 @@ gcc -O3 -fPIC -shared \
 python3 -c "import ctypes; ctypes.CDLL('./libasconhash.so'); ctypes.CDLL('./libasconaead.so'); print('Ascon libraries OK')"
 ```
 
-### 6. Run a small smoke test
+### 6. Run the protocol-v1 primitive tests
 
 ```bash
-cd ../pi_side
-python3 benchmark_final_protocol.py --n 16 --trials 3
+cd ~/A-PUF-Based-Post-Quantum-Authentication-Protocol-for-Pseudonymous-UAV-RID
+python3 -m unittest tests/test_protocol_v1_primitives.py -v
 ```
 
-This uses a deterministic software fixture and writes files ending in
-`_quicktest`. It verifies the software path only and makes no PUF entropy or
-physical-acquisition claim.
+These tests cover BCH(950,870) correction, the single-PUF helper path,
+canonical decoding, direction-bound Merkle proofs, and replay admission. They
+make no PUF entropy or physical-acquisition claim.
 
-### 7. Run the full Raspberry Pi measurement
+### 7. Rerun Raspberry Pi measurements after enrollment
 
-The report-scale run uses `n=1024` and `n=16384`, discards one warm-up, and
-records 30 trials per operation:
+The revised protocol uses one PUF enrollment, BCH(950,870), strict binary
+objects, signed revocation checks, time-derived slots, and a resident TCP
+service. Do not mix its results with the historical pre-alignment files.
+
+On the Pi, run one discarded warm-up and 30 recorded trials:
 
 ```bash
+cd "UAV role/uav_proto/pi_side"
 python3 benchmark_final_protocol.py \
   --puf-vectors ../puf_vectors_stage128.json
 ```
 
-The command writes:
+The compatibility entry point invokes `benchmark_protocol_v1.py` and writes
+raw trial CSV, summary CSV, metadata/size JSON, and paste-ready LaTeX rows with
+the `results_protocol_v1` prefix. The supplied digital vector file has no
+analog margin values; the harness uses a clearly labeled deterministic margin
+ordering solely to exercise and time top-950 selection. Do not cite that
+ordering as an LTspice or silicon margin result.
 
-```text
-results_final_protocol_timing.csv
-results_final_protocol_sizes.csv
-results_final_protocol_availability.csv
-results_final_protocol_metadata.json
-```
+## Legacy crash-recovery experiment
 
-Copy these files into `Results/` when preserving a completed measurement run.
-The metadata file must identify the Raspberry Pi platform, the native Ascon
-backend, the two PUF-vector channels, `n=[1024,16384]`, and 30 trials.
-
-## Crash-recovery experiment
-
-Run the fault-injection harness on the Raspberry Pi's ext4 microSD filesystem,
-not on the Mac:
+The revised protocol derives `j` from trusted time and performs no
+per-interval journal write. `crash_recovery_harness.py` is retained only as a
+legacy artifact for the superseded journal design; its results do not
+characterize the revised algorithms.
 
 ```bash
 cd "UAV role/uav_proto/pi_side"
@@ -183,21 +183,32 @@ mount | grep "$(df . | tail -1 | awk '{print $1}')"
 
 ## Full protocol workflow
 
-The prototype uses JSON files as a stand-in for transport. Copy each output to
-the other role's matching `in/` directory between steps.
+JSON is used only for local records and manual file transfer. Cryptographically
+processed protocol objects use the strict canonical binary codec in
+`shared/protocol_messages.py`.
 
 ### TA initialization (Mac)
 
 ```bash
 cd "TA Verifier role/uav_proto/computer_side"
-python3 ta_phase1_init.py --n 1024
+python3 ta_phase1_init.py --n 1024 --delta-t 60
+python3 ta_phase2_enroll_process.py --issue-challenges
 ```
+
+Pre-alignment TA/UAV JSON records are not schema-compatible. Preserve them as
+historical evidence, then start a fresh enrollment. Initialization refuses to
+overwrite existing TA files unless you explicitly add `--force`; the code
+never silently replaces them.
 
 Use `--n 16384` for the second report-scale experiment. Phase 1 validates that
 `n` is a positive power of two, so switching sizes no longer requires editing
 `shared/protocol_common.py`.
 
-Copy `out/ta_public_params.json` to `UAV role/uav_proto/pi_side/in/`.
+Copy these files to `UAV role/uav_proto/pi_side/in/`:
+
+- `out/ta_public_params.json`
+- `out/ta_revocation_list.json`
+- `out/ta_uav_root_challenges.json`
 
 ### UAV enrollment (Pi)
 
@@ -219,10 +230,15 @@ then run:
 python3 uav_phase2_enroll_finalize.py
 ```
 
+For renewal, issue fresh TA challenges and run
+`uav_phase2_enroll_request.py --renew`; the UAV reconstructs the same
+`K_PUF`, checks `KC_i`, and keeps the existing legal key binding.
+
 ### Verifier enrollment (Mac)
 
 ```bash
 cd "TA Verifier role/uav_proto/computer_side"
+python3 ta_phase2_verifier_enroll_process.py --issue-challenge
 python3 verifier_phase2_enroll_request.py
 python3 ta_phase2_verifier_enroll_process.py
 ```
@@ -241,16 +257,16 @@ Copy `out/broadcast_log.jsonl` to the verifier's `computer_side/in/`.
 On the verifier:
 
 ```bash
-python3 verifier_phase4_request.py
+python3 verifier_phase4_request.py --force
 ```
 
-Copy `out/verifier_reqauth.json` to the UAV's `pi_side/in/`, then on the UAV:
+Copy `out/verifier_reqauth.bin` to the UAV's `pi_side/in/`, then on the UAV:
 
 ```bash
 python3 uav_phase4_session_and_respond.py
 ```
 
-Copy `out/uav_response.json` to the verifier's `computer_side/in/`, then:
+Copy `out/uav_response.bin` to the verifier's `computer_side/in/`, then:
 
 ```bash
 python3 verifier_phase4_process_response.py
@@ -259,13 +275,14 @@ python3 verifier_phase4_process_response.py
 A successful run ends with:
 
 ```text
-ACCEPT: signing identity and Merkle root both bound.
+ACCEPT: certificate, revocation, time, Merkle, and UAV signature checks passed.
 ```
 
 ## Live Wi-Fi unicast experiment
 
-After enrollment, verifier enrollment, and one Phase 3 broadcast, start the
-TCP wrapper on the Pi:
+After enrollment and verifier enrollment, capture a fresh Phase 3 broadcast,
+then start the resident TCP service on the Pi. Activation and Merkle-tree
+construction occur once at startup, outside the per-request timer:
 
 ```bash
 cd "UAV role/uav_proto/pi_side"
@@ -340,13 +357,17 @@ sha256sum -c Tamarin/Tamarin_Final_Evidence/SHA256SUMS.txt
 
 ## Existing results
 
-`Results/results_final_protocol_metadata.json` identifies the committed final
-software benchmark as a Raspberry Pi aarch64 run with native Ascon, supplied
-PUF vectors, `n=1024` and `n=16384`, 30 recorded trials, and one discarded
-warm-up. `Results/live_unicast/` contains the separate live Wi-Fi/TCP
-evaluation. Consult each metadata file and availability CSV together with its
-timing table; do not reinterpret unavailable physical-PUF or energy quantities
-as zero.
+`Results/protocol_v1_20260724/` contains the post-alignment Raspberry Pi
+software benchmark and live Wi-Fi/TCP evaluation for `n=1024` and `n=16384`.
+Each experiment discarded one warm-up and retained 30 trials. The live runs
+cryptographically accepted all 60 recorded exchanges. See that directory's
+README and raw CSV/JSON/PCAP files for exact values and interpretation
+boundaries.
+
+The older files directly under `Results/` and `Results/live_unicast/` are
+pre-alignment historical evidence and must not be quoted as measurements of
+protocol version 1. LTspice entropy/PVT results are separate circuit-software
+simulation evidence and are unaffected by wire-format changes.
 
 ## Security and reproducibility notes
 
@@ -354,10 +375,11 @@ as zero.
 - Native `.so` files must be rebuilt independently on each architecture.
 - Deleting `.puf_store.json` invalidates any enrollment created from that
   emulated device state.
-- The JSON file channel is a prototype transport and is not a production wire
-  format.
-- The BCH Python binding protects a byte-aligned shortened message; see
-  `shared/puf_pipeline_1023.py` for the exact capacity disclosure.
+- JSON files hold local records; signed/encrypted protocol objects use a
+  versioned, length-delimited binary format and reject unknown critical fields,
+  duplicate fields, invalid ordering, invalid lengths, and trailing bytes.
+- The active fuzzy extractor uses the exact shortened BCH(950,870), `t=8`,
+  code-offset construction and a 950-to-256-bit Toeplitz extractor.
 - Benchmark input vectors are supplied before timing; physical acquisition is
   excluded by design.
 
