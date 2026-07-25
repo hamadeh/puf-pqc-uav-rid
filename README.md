@@ -39,8 +39,8 @@ excluded by `.gitignore`.
 
 ```bash
 cd ~
-git clone https://github.com/hamadeh/A-PUF-Based-Post-Quantum-Authentication-Protocol-for-Pseudonymous-UAV-RID.git
-cd A-PUF-Based-Post-Quantum-Authentication-Protocol-for-Pseudonymous-UAV-RID
+git clone https://github.com/hamadeh/puf-pqc-uav-rid.git
+cd puf-pqc-uav-rid
 ```
 
 ### 2. Install system packages
@@ -78,7 +78,7 @@ ldconfig -p | grep liboqs
 ### 4. Create the Python environment
 
 ```bash
-cd ~/A-PUF-Based-Post-Quantum-Authentication-Protocol-for-Pseudonymous-UAV-RID/"UAV role/uav_proto"
+cd ~/puf-pqc-uav-rid/"UAV role/uav_proto"
 python3 -m venv venv
 source venv/bin/activate
 python3 -m pip install --upgrade pip
@@ -98,7 +98,7 @@ python3 -m pip install ./liboqs-python
 The Ascon binaries are architecture-specific and must be built on the Pi.
 
 ```bash
-cd ~/A-PUF-Based-Post-Quantum-Authentication-Protocol-for-Pseudonymous-UAV-RID/"UAV role/uav_proto/shared"
+cd ~/puf-pqc-uav-rid/"UAV role/uav_proto/shared"
 git clone --depth 1 https://github.com/ascon/ascon-c.git ascon-c
 
 gcc -O3 -fPIC -shared \
@@ -121,7 +121,7 @@ python3 -c "import ctypes; ctypes.CDLL('./libasconhash.so'); ctypes.CDLL('./liba
 ### 6. Run the protocol-v1 primitive tests
 
 ```bash
-cd ~/A-PUF-Based-Post-Quantum-Authentication-Protocol-for-Pseudonymous-UAV-RID
+cd ~/puf-pqc-uav-rid
 python3 -m unittest tests/test_protocol_v1_primitives.py -v
 ```
 
