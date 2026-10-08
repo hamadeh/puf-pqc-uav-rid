@@ -1,8 +1,10 @@
-# PUF-Rooted Post-Quantum Authentication for Pseudonymous UAV Remote ID
+# Commitment-Based Authentication for Pseudonymous UAV Remote Identification Using Post-Quantum Primitives and Modeled Ring-Oscillator PUF Reconstruction
 
-Research prototype and reproducibility artifacts for a PUF-rooted,
-post-quantum UAV Remote ID authentication protocol. The implementation splits
-the protocol between:
+Research prototype and reproducibility artifacts for the manuscript's
+commitment-based architecture, in which a TA-signed Merkle root authorizes a
+bounded sequence of interval pseudonyms. PUF-rooted credential reconstruction
+and post-quantum primitives support the authentication workflow. The
+implementation splits the protocol between:
 
 - a Raspberry Pi 5 acting as the UAV;
 - an Intel Mac acting as the Trusted Authority (TA) and authorized verifier;
